@@ -247,7 +247,155 @@ textarea.inote:focus{outline:none;border-color:#1D9E75}
 </div>
 
 <!-- SKETCH (drawing tool embedded) -->
-<div id="tab-sketch" class="tab-panel"></div>
+<div id="tab-sketch" class="tab-panel">
+<div id="topbar">
+  <button class="tbb" onclick="newDwg()">New</button>
+  <button class="tbb" onclick="saveDwg()">Save</button>
+  <button class="tbb bp" onclick="loadBlueprint()">⚡ Blueprint</button>
+  <button class="tbb" onclick="exportPNG()">⬇ PNG</button>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="doUndo()">↩</button>
+  <button class="tbb" onclick="doRedo()">↪</button>
+  <div class="tsep"></div>
+  <div id="cpal" style="display:flex;gap:3px;align-items:center"></div>
+  <input type="color" id="cpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" oninput="setColor(this.value)">
+  <div class="tsep"></div>
+  <label>W</label>
+  <select id="swsel" onchange="strokeW=+this.value"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="5">5</option><option value="8">8</option></select>
+  <label>Fill</label>
+  <input type="color" id="fpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" value="#E1F5EE">
+  <button class="tbb" id="ftog" onclick="toggleFill()">No fill</button>
+  <div class="tsep"></div>
+  <button class="tbb on" id="gbtn" onclick="toggleGrid()">Grid</button>
+  <button class="tbb on" id="sbtn" onclick="toggleSnap()">Snap</button>
+  <label>Unit</label>
+  <select id="usel" onchange="unit=this.value;render()"><option value="px">px</option><option value="mm">mm</option><option value="in">in</option></select>
+  <label>Grid</label>
+  <select id="gsel" onchange="gridPx=+this.value;render()"><option value="10">10</option><option value="20" selected>20</option><option value="40">40</option></select>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="doZoom(.8)">−</button>
+  <span id="zlbl" style="font-size:11px;min-width:36px;text-align:center">100%</span>
+  <button class="tbb" onclick="doZoom(1.25)">+</button>
+  <button class="tbb" onclick="fitView()">Fit</button>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="openGallery()">📁 Gallery</button>
+  <button class="tbb" id="symbtn" onclick="toggleSymPanel()">⚡ Symbols</button>
+  <button id="synctoggle" onclick="toggleSync()">🔴 Live Sync</button>
+  <input type="text" id="dwgname" value="Untitled" style="font-size:11px;border:0.5px solid #D3D1C7;border-radius:5px;padding:2px 6px;width:110px;font-family:inherit">
+</div>
+<div id="main">
+<div id="tlbar">
+  <button class="tb on" id="t-select" onclick="setTool('select')" title="Select S">↖</button><div class="tg">sel</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-rect" onclick="setTool('rect')" title="R" style="font-size:11px;font-weight:600">▭</button><div class="tg">rect</div>
+  <button class="tb" id="t-rrect" onclick="setTool('rrect')" title="Rounded rect" style="font-size:11px">▢</button><div class="tg">round</div>
+  <button class="tb" id="t-circle" onclick="setTool('circle')" title="C">◯</button><div class="tg">circle</div>
+  <button class="tb" id="t-tri" onclick="setTool('tri')" title="Triangle">△</button><div class="tg">tri</div>
+  <button class="tb" id="t-diamond" onclick="setTool('diamond')" title="Diamond">◇</button><div class="tg">diam</div>
+  <button class="tb" id="t-hex" onclick="setTool('hex')" title="Hexagon">⬡</button><div class="tg">hex</div>
+  <button class="tb" id="t-para" onclick="setTool('para')" title="Parallelogram" style="font-size:11px">▱</button><div class="tg">para</div>
+  <button class="tb" id="t-cyl" onclick="setTool('cyl')" title="Cylinder" style="font-size:11px">⬭</button><div class="tg">cyl</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-line" onclick="setTool('line')" title="L" style="font-weight:600">╱</button><div class="tg">line</div>
+  <button class="tb" id="t-arrow" onclick="setTool('arrow')" title="A">→</button><div class="tg">arrow</div>
+  <button class="tb" id="t-darrow" onclick="setTool('darrow')" title="Double arrow">↔</button><div class="tg">2-arr</div>
+  <button class="tb" id="t-dim" onclick="setTool('dim')" title="Dimension" style="font-size:10px">⟷</button><div class="tg">dim</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-text" onclick="setTool('text')" title="T" style="font-weight:700">T</button><div class="tg">text</div>
+  <button class="tb" id="t-note" onclick="setTool('note')" title="N">📝</button><div class="tg">note</div>
+  <button class="tb" id="t-label" onclick="setTool('label')" title="Label" style="font-size:10px;font-weight:600">[A]</button><div class="tg">label</div>
+  <div class="tsep2"></div>
+  <button class="tb" onclick="document.getElementById('fimp').click()" title="Import image">🖼</button><div class="tg">img</div>
+  <input type="file" id="fimp" accept="image/*,.pdf" multiple style="display:none" onchange="handleFile(event)">
+  <div class="tsep2"></div>
+  <button class="tb" onclick="delSelected()" title="Del" style="color:#A32D2D;font-size:15px">✕</button><div class="tg">del</div>
+</div>
+<div id="cwrap"><canvas id="cvs"></canvas><textarea id="tbox" rows="1" spellcheck="false"></textarea></div>
+<div id="inspector">
+  <div class="isec">
+    <div class="ititle">Shape</div>
+    <div id="inosel" style="font-size:11px;color:#888">Nothing selected</div>
+    <div id="iprops" style="display:none">
+      <div class="irow"><span class="ilbl">X</span><input class="iv" id="ix" onchange="setPropX(+this.value)"></div>
+      <div class="irow"><span class="ilbl">Y</span><input class="iv" id="iy" onchange="setPropY(+this.value)"></div>
+      <div class="irow"><span class="ilbl">W</span><input class="iv" id="iw" onchange="setPropW(+this.value)"></div>
+      <div class="irow"><span class="ilbl">H</span><input class="iv" id="ih" onchange="setPropH(+this.value)"></div>
+      <div class="irow" id="ifontr" style="display:none"><span class="ilbl">Sz</span><input class="iv" id="ifs" type="number" min="6" max="120" onchange="setProp('fontSize',+this.value);render()"></div>
+      <div class="irow"><span class="ilbl">Color</span><input type="color" id="icol" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('color',this.value);render()"></div>
+      <div class="irow"><span class="ilbl">Fill</span><input type="color" id="ifill" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('fill',this.value);render()">
+        <button style="font-size:9px;padding:1px 5px;border:0.5px solid #D3D1C7;border-radius:3px;cursor:pointer;background:#fff" onclick="setProp('fill',null);render()">None</button></div>
+    </div>
+  </div>
+
+  <div id="pinsec" style="display:none">
+    <div class="ititle">Pins / Contacts</div>
+    <div id="pinlist"></div>
+    <button style="width:100%;font-size:10px;padding:2px 0;border:0.5px dashed #1D9E75;border-radius:5px;background:#E1F5EE;color:#04342C;cursor:pointer" onclick="addPin()">+ Add pin</button>
+  </div>
+  <div class="isec" id="itextsec" style="display:none">
+    <div class="ititle">Text</div>
+    <textarea class="inote" id="itextval" rows="3" oninput="setProp('text',this.value);render()"></textarea>
+  </div>
+  <div class="isec">
+    <div class="ititle">Drawing note</div>
+    <textarea class="inote" id="dnote" placeholder="Notes about this drawing..." oninput="dwgNote=this.value"></textarea>
+  </div>
+  <div class="isec">
+    <div class="ititle">Attachments</div>
+    <div id="attlist"></div>
+    <button class="tbb" onclick="document.getElementById('fimp').click()" style="width:100%;margin-top:3px;font-size:10px">+ Attach file</button>
+  </div>
+</div>
+<div id="sympanel">
+  <div id="symhead">
+    <span style="font-size:10px;font-weight:500;color:#888;text-transform:uppercase;flex:1">Symbols</span>
+    <input type="file" id="svgfile" accept=".svg" style="display:none" onchange="loadSVGLib(event)">
+    <button class="tbb" onclick="document.getElementById('svgfile').click()" style="font-size:9px;padding:2px 5px">Load SVG</button>
+    <button class="tbb" onclick="toggleSymPanel()" style="font-size:10px;padding:2px 6px">✕</button>
+  </div>
+  <div id="symtabs"></div>
+  <div id="symgrid"></div>
+</div>
+</div>
+<div id="sbar">
+  <span id="sbpos">0, 0</span><span id="sbsel"></span><span id="sbmsg"></span>
+  <span style="margin-left:auto;font-size:9px">S=select R=rect C=circle L=line A=arrow T=text N=note · Space+drag=pan · Scroll=zoom · Del=delete · Shift+click sym=multi-stamp</span>
+</div>
+<div id="galp" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center">
+  <div id="galbox">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:500">Saved drawings</span>
+      <button class="tbb" onclick="closeGallery()">Close</button>
+    </div>
+    <div class="gg" id="gallist"></div>
+  </div>
+</div>
+
+<!-- LIVE SYNC PANEL -->
+<div id="syncpanel">
+  <div id="synctop">
+    <div id="syncdot"></div>
+    <span id="syncstatus">Not connected</span>
+    <button id="synctoggle2" onclick="toggleSync()" style="margin-left:auto;font-size:10px;padding:2px 6px;border:0.5px solid #D3D1C7;border-radius:4px;background:#fff;cursor:pointer">✕</button>
+  </div>
+  <div id="syncbody">
+    <div style="font-size:10px;color:#888;margin-bottom:6px">Paste your Railway/server URL:</div>
+    <input id="syncurl" type="text" placeholder="https://ssg-sync-xxxx.railway.app" spellcheck="false">
+    <button id="syncconnbtn" class="syncbtn" onclick="syncConnect()">Connect</button>
+    <button id="syncsendbtn" class="syncbtn" onclick="syncPush()">⬆ Push drawing now</button>
+    <button id="syncdiscbtn" class="syncbtn" onclick="syncDisconnect()">Disconnect</button>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      <input type="checkbox" id="syncauto" checked style="cursor:pointer">
+      <label for="syncauto" style="font-size:10px;color:#5F5E5A;cursor:pointer">Auto-sync on every change</label>
+    </div>
+    <div id="synclog"></div>
+  </div>
+</div>
+
+</div>
+<div id="wire-hint">Click another pin to connect — Esc to cancel</div>
+<div id="wire-hint">Click another pin to connect — Esc to cancel</div>
+</div>
 
 <!-- PIN MAP -->
 <div id="tab-pinmap" class="tab-panel">
@@ -440,7 +588,7 @@ textarea.inote:focus{outline:none;border-color:#1D9E75}
 </div><!-- /app -->
 
 <!-- SYNC MODAL -->
-<div id="syncmodal">
+<div id="syncmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
   <div id="syncbox">
     <h3>⚡ Live Sync with Claude</h3>
     <p style="font-size:11px;color:#888;margin-bottom:10px">Connect to Railway server so Claude can see your drawings in real time</p>
@@ -459,8 +607,6 @@ textarea.inote:focus{outline:none;border-color:#1D9E75}
 </div>
 
 <!-- WIRE HINT -->
-<div id="wire-hint">Click another pin to connect — Esc to cancel</div>
-
 
 <script>
 
@@ -524,10 +670,10 @@ async function delNote(i){ notes.splice(i,1); try{await window.storage.set('ssg-
 // ── SYNC ──
 let syncConnected=false, syncURL='', syncLogLines=[], _syncThrottle=null, _pollInterval=null;
 
-function openSyncModal(){ document.getElementById('syncmodal').classList.add('open'); }
-function closeSyncModal(){ document.getElementById('syncmodal').classList.remove('open'); }
+function openSyncModal(){ const m=document.getElementById('syncmodal'); m.style.display='flex'; }
+function closeSyncModal(){ document.getElementById('syncmodal').style.display='none'; }
 // click outside closes
-document.getElementById('syncmodal').addEventListener('click',e=>{if(e.target.id==='syncmodal')closeSyncModal();});
+setTimeout(()=>{ const sm=document.getElementById('syncmodal'); if(sm) sm.addEventListener('click',e=>{if(e.target.id==='syncmodal')closeSyncModal();}); }, 100);
 
 function syncLog(msg){
   const now=new Date().toLocaleTimeString();
@@ -575,7 +721,9 @@ function syncConnect(){
         }).catch(()=>{syncSetStatus('error');clearInterval(_pollInterval);});
       },3000);
     })
-    .catch(e=>{syncSetStatus('error');syncLog('Cannot reach: '+e.message);});
+    .catch(e=>{syncSetStatus('error');syncLog('Cannot reach: '+e.message);syncLog('Tip: make sure URL has NO trailing slash');});
+  // Save URL for next session
+  try{window.storage.set('ssg-syncurl', url);}catch(e){}
 }
 function syncDisconnect(){clearInterval(_pollInterval);syncSetStatus('disconnected');syncConnected=false;syncURL='';syncLog('Disconnected');}
 function syncGetPayload(){
