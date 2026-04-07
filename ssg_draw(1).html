@@ -1,7 +1,74 @@
 <!DOCTYPE html>
 <html><head>
-<meta charset="utf-8"><title>SSG Lab — Drawing Tool</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SSG Lab Station — Command Center</title>
 <style>
+/* ── RESET & BASE ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:system-ui,sans-serif;font-size:13px;background:#F8F7F4;color:#2C2C2A}
+/* ── APP SHELL ── */
+#app{display:flex;flex-direction:column;height:100vh}
+/* ── TOP HEADER ── */
+#header{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#2C2C2A;color:#fff;flex-shrink:0;min-height:40px}
+#header h1{font-size:13px;font-weight:500;white-space:nowrap}
+#header .sub{font-size:10px;color:#888780;white-space:nowrap}
+#syncbar{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+#syncdot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;transition:background .3s}
+#syncdot.conn{background:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.3)}
+#syncdot.err{background:#E24B4A}
+#syncstatus{font-size:10px;color:#B4B2A9;white-space:nowrap}
+#syncurlbtn{font-size:10px;padding:2px 8px;border:0.5px solid #5F5E5A;border-radius:4px;background:transparent;color:#B4B2A9;cursor:pointer}
+#syncurlbtn:hover{background:#3C3A38;color:#fff}
+#syncurlbtn.live{background:#1D9E75;color:#fff;border-color:#1D9E75}
+/* ── MAIN TABS ── */
+#maintabs{display:flex;gap:0;background:#fff;border-bottom:1px solid #D3D1C7;flex-shrink:0;overflow-x:auto}
+.mtab{padding:8px 16px;font-size:12px;font-weight:500;color:#5F5E5A;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.mtab:hover{color:#2C2C2A;background:#F8F7F4}
+.mtab.active{color:#1D9E75;border-bottom-color:#1D9E75;background:#fff}
+/* ── CONTENT AREA ── */
+#content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tab-panel{display:none;flex:1;overflow-y:auto;padding:14px;height:100%}
+.tab-panel.active{display:flex;flex-direction:column}
+/* Sketch tab has no padding — canvas fills it */
+#tab-sketch{padding:0;overflow:hidden}
+#tab-sketch.active{display:flex}
+/* ── SHARED CARD STYLES ── */
+.card{background:#fff;border:0.5px solid #D3D1C7;border-radius:10px;padding:12px 14px;margin-bottom:10px;flex-shrink:0}
+.card-title{font-size:12px;font-weight:500;color:#2C2C2A;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:500}
+.row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid #F1EFE8}
+.row:last-child{border-bottom:none}
+.rk{font-size:11px;font-weight:500;min-width:130px;color:#5F5E5A;flex-shrink:0}
+.rv{font-size:11px;color:#2C2C2A;flex:1}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.done{background:#1D9E75}.pend{background:#EF9F27}.block{background:#E24B4A}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+input[type=text],textarea,select{border:0.5px solid #D3D1C7;border-radius:6px;padding:5px 8px;font-size:11px;font-family:inherit;color:#2C2C2A;background:#fff}
+input[type=text],textarea{width:100%}
+textarea{resize:vertical}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#1D9E75}
+button{padding:5px 11px;border:0.5px solid #B4B2A9;border-radius:6px;font-size:11px;font-family:inherit;cursor:pointer;background:#F1EFE8;color:#444441}
+button:hover{background:#E1F5EE;border-color:#5DCAA5;color:#04342C}
+.btn-p{background:#1D9E75;color:#fff;border-color:#1D9E75}.btn-p:hover{background:#0F6E56}
+.btn-d{background:#FCEBEB;color:#A32D2D;border-color:#E24B4A}
+/* pin rows */
+.pr{display:flex;gap:5px;align-items:center;padding:3px 0;border-bottom:0.5px solid #F1EFE8;font-size:10px}
+.pr:last-child{border-bottom:none}
+.pn{font-family:monospace;min-width:54px;padding:1px 4px;border-radius:3px;text-align:center;font-weight:500}
+.pt{padding:1px 5px;border-radius:3px;font-weight:500;white-space:nowrap;font-size:9px}
+/* notes */
+.ni{border-radius:6px;padding:7px 10px;margin-bottom:6px;font-size:11px;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;border:0.5px solid}
+.ndel{font-size:10px;color:#A32D2D;cursor:pointer;padding:2px 5px;border-radius:3px}
+.ndel:hover{background:#FCEBEB}
+/* sync modal */
+#syncmodal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+#syncmodal.open{display:flex}
+#syncbox{background:#fff;border-radius:12px;padding:20px;width:min(400px,90vw)}
+#syncbox h3{font-size:13px;font-weight:500;margin-bottom:10px}
+#syncurl{font-family:monospace;margin-bottom:8px}
+
 html,body{height:100%;overflow:hidden;margin:0;padding:0}
 *{box-sizing:border-box;user-select:none}
 body{font-family:system-ui,sans-serif;font-size:12px;background:#F8F7F4;color:#2C2C2A;display:flex;flex-direction:column}
@@ -96,156 +163,448 @@ textarea.inote:focus{outline:none;border-color:#1D9E75}
 #pinsec .ititle{margin-bottom:5px}
 #pinlist{max-height:160px;overflow-y:auto;margin-bottom:5px}
 
+
+/* Embedded draw tool in sketch tab */
+#tab-sketch #topbar{flex-wrap:wrap;flex-shrink:0}
+#tab-sketch #main{flex:1;min-height:0}
+#tab-sketch #cwrap{flex:1;height:100%}
+#tab-sketch #sbar{flex-shrink:0}
+#tab-sketch #inspector{max-height:none}
+#tab-sketch #sympanel{max-height:none}
+
 </style>
 </head><body>
 <div id="app">
-<div id="topbar">
-  <button class="tbb" onclick="newDwg()">New</button>
-  <button class="tbb" onclick="saveDwg()">Save</button>
-  <button class="tbb bp" onclick="loadBlueprint()">⚡ Blueprint</button>
-  <button class="tbb" onclick="exportPNG()">⬇ PNG</button>
-  <div class="tsep"></div>
-  <button class="tbb" onclick="doUndo()">↩</button>
-  <button class="tbb" onclick="doRedo()">↪</button>
-  <div class="tsep"></div>
-  <div id="cpal" style="display:flex;gap:3px;align-items:center"></div>
-  <input type="color" id="cpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" oninput="setColor(this.value)">
-  <div class="tsep"></div>
-  <label>W</label>
-  <select id="swsel" onchange="strokeW=+this.value"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="5">5</option><option value="8">8</option></select>
-  <label>Fill</label>
-  <input type="color" id="fpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" value="#E1F5EE">
-  <button class="tbb" id="ftog" onclick="toggleFill()">No fill</button>
-  <div class="tsep"></div>
-  <button class="tbb on" id="gbtn" onclick="toggleGrid()">Grid</button>
-  <button class="tbb on" id="sbtn" onclick="toggleSnap()">Snap</button>
-  <label>Unit</label>
-  <select id="usel" onchange="unit=this.value;render()"><option value="px">px</option><option value="mm">mm</option><option value="in">in</option></select>
-  <label>Grid</label>
-  <select id="gsel" onchange="gridPx=+this.value;render()"><option value="10">10</option><option value="20" selected>20</option><option value="40">40</option></select>
-  <div class="tsep"></div>
-  <button class="tbb" onclick="doZoom(.8)">−</button>
-  <span id="zlbl" style="font-size:11px;min-width:36px;text-align:center">100%</span>
-  <button class="tbb" onclick="doZoom(1.25)">+</button>
-  <button class="tbb" onclick="fitView()">Fit</button>
-  <div class="tsep"></div>
-  <button class="tbb" onclick="openGallery()">📁 Gallery</button>
-  <button class="tbb" id="symbtn" onclick="toggleSymPanel()">⚡ Symbols</button>
-  <button id="synctoggle" onclick="toggleSync()">🔴 Live Sync</button>
-  <input type="text" id="dwgname" value="Untitled" style="font-size:11px;border:0.5px solid #D3D1C7;border-radius:5px;padding:2px 6px;width:110px;font-family:inherit">
-</div>
-<div id="main">
-<div id="tlbar">
-  <button class="tb on" id="t-select" onclick="setTool('select')" title="Select S">↖</button><div class="tg">sel</div>
-  <div class="tsep2"></div>
-  <button class="tb" id="t-rect" onclick="setTool('rect')" title="R" style="font-size:11px;font-weight:600">▭</button><div class="tg">rect</div>
-  <button class="tb" id="t-rrect" onclick="setTool('rrect')" title="Rounded rect" style="font-size:11px">▢</button><div class="tg">round</div>
-  <button class="tb" id="t-circle" onclick="setTool('circle')" title="C">◯</button><div class="tg">circle</div>
-  <button class="tb" id="t-tri" onclick="setTool('tri')" title="Triangle">△</button><div class="tg">tri</div>
-  <button class="tb" id="t-diamond" onclick="setTool('diamond')" title="Diamond">◇</button><div class="tg">diam</div>
-  <button class="tb" id="t-hex" onclick="setTool('hex')" title="Hexagon">⬡</button><div class="tg">hex</div>
-  <button class="tb" id="t-para" onclick="setTool('para')" title="Parallelogram" style="font-size:11px">▱</button><div class="tg">para</div>
-  <button class="tb" id="t-cyl" onclick="setTool('cyl')" title="Cylinder" style="font-size:11px">⬭</button><div class="tg">cyl</div>
-  <div class="tsep2"></div>
-  <button class="tb" id="t-line" onclick="setTool('line')" title="L" style="font-weight:600">╱</button><div class="tg">line</div>
-  <button class="tb" id="t-arrow" onclick="setTool('arrow')" title="A">→</button><div class="tg">arrow</div>
-  <button class="tb" id="t-darrow" onclick="setTool('darrow')" title="Double arrow">↔</button><div class="tg">2-arr</div>
-  <button class="tb" id="t-dim" onclick="setTool('dim')" title="Dimension" style="font-size:10px">⟷</button><div class="tg">dim</div>
-  <div class="tsep2"></div>
-  <button class="tb" id="t-text" onclick="setTool('text')" title="T" style="font-weight:700">T</button><div class="tg">text</div>
-  <button class="tb" id="t-note" onclick="setTool('note')" title="N">📝</button><div class="tg">note</div>
-  <button class="tb" id="t-label" onclick="setTool('label')" title="Label" style="font-size:10px;font-weight:600">[A]</button><div class="tg">label</div>
-  <div class="tsep2"></div>
-  <button class="tb" onclick="document.getElementById('fimp').click()" title="Import image">🖼</button><div class="tg">img</div>
-  <input type="file" id="fimp" accept="image/*,.pdf" multiple style="display:none" onchange="handleFile(event)">
-  <div class="tsep2"></div>
-  <button class="tb" onclick="delSelected()" title="Del" style="color:#A32D2D;font-size:15px">✕</button><div class="tg">del</div>
-</div>
-<div id="cwrap"><canvas id="cvs"></canvas><textarea id="tbox" rows="1" spellcheck="false"></textarea></div>
-<div id="inspector">
-  <div class="isec">
-    <div class="ititle">Shape</div>
-    <div id="inosel" style="font-size:11px;color:#888">Nothing selected</div>
-    <div id="iprops" style="display:none">
-      <div class="irow"><span class="ilbl">X</span><input class="iv" id="ix" onchange="setPropX(+this.value)"></div>
-      <div class="irow"><span class="ilbl">Y</span><input class="iv" id="iy" onchange="setPropY(+this.value)"></div>
-      <div class="irow"><span class="ilbl">W</span><input class="iv" id="iw" onchange="setPropW(+this.value)"></div>
-      <div class="irow"><span class="ilbl">H</span><input class="iv" id="ih" onchange="setPropH(+this.value)"></div>
-      <div class="irow" id="ifontr" style="display:none"><span class="ilbl">Sz</span><input class="iv" id="ifs" type="number" min="6" max="120" onchange="setProp('fontSize',+this.value);render()"></div>
-      <div class="irow"><span class="ilbl">Color</span><input type="color" id="icol" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('color',this.value);render()"></div>
-      <div class="irow"><span class="ilbl">Fill</span><input type="color" id="ifill" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('fill',this.value);render()">
-        <button style="font-size:9px;padding:1px 5px;border:0.5px solid #D3D1C7;border-radius:3px;cursor:pointer;background:#fff" onclick="setProp('fill',null);render()">None</button></div>
-    </div>
-  </div>
 
-  <div id="pinsec" style="display:none">
-    <div class="ititle">Pins / Contacts</div>
-    <div id="pinlist"></div>
-    <button style="width:100%;font-size:10px;padding:2px 0;border:0.5px dashed #1D9E75;border-radius:5px;background:#E1F5EE;color:#04342C;cursor:pointer" onclick="addPin()">+ Add pin</button>
-  </div>
-  <div class="isec" id="itextsec" style="display:none">
-    <div class="ititle">Text</div>
-    <textarea class="inote" id="itextval" rows="3" oninput="setProp('text',this.value);render()"></textarea>
-  </div>
-  <div class="isec">
-    <div class="ititle">Drawing note</div>
-    <textarea class="inote" id="dnote" placeholder="Notes about this drawing..." oninput="dwgNote=this.value"></textarea>
-  </div>
-  <div class="isec">
-    <div class="ititle">Attachments</div>
-    <div id="attlist"></div>
-    <button class="tbb" onclick="document.getElementById('fimp').click()" style="width:100%;margin-top:3px;font-size:10px">+ Attach file</button>
-  </div>
-</div>
-<div id="sympanel">
-  <div id="symhead">
-    <span style="font-size:10px;font-weight:500;color:#888;text-transform:uppercase;flex:1">Symbols</span>
-    <input type="file" id="svgfile" accept=".svg" style="display:none" onchange="loadSVGLib(event)">
-    <button class="tbb" onclick="document.getElementById('svgfile').click()" style="font-size:9px;padding:2px 5px">Load SVG</button>
-    <button class="tbb" onclick="toggleSymPanel()" style="font-size:10px;padding:2px 6px">✕</button>
-  </div>
-  <div id="symtabs"></div>
-  <div id="symgrid"></div>
-</div>
-</div>
-<div id="sbar">
-  <span id="sbpos">0, 0</span><span id="sbsel"></span><span id="sbmsg"></span>
-  <span style="margin-left:auto;font-size:9px">S=select R=rect C=circle L=line A=arrow T=text N=note · Space+drag=pan · Scroll=zoom · Del=delete · Shift+click sym=multi-stamp</span>
-</div>
-<div id="galp" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center">
-  <div id="galbox">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span style="font-size:13px;font-weight:500">Saved drawings</span>
-      <button class="tbb" onclick="closeGallery()">Close</button>
-    </div>
-    <div class="gg" id="gallist"></div>
-  </div>
-</div>
-
-<!-- LIVE SYNC PANEL -->
-<div id="syncpanel">
-  <div id="synctop">
+<!-- ── HEADER ── -->
+<div id="header">
+  <h1>SSG Lab Station</h1>
+  <span class="sub">Self-Sustaining Generator · Diagnostic Platform</span>
+  <div id="syncbar">
     <div id="syncdot"></div>
-    <span id="syncstatus">Not connected</span>
-    <button id="synctoggle2" onclick="toggleSync()" style="margin-left:auto;font-size:10px;padding:2px 6px;border:0.5px solid #D3D1C7;border-radius:4px;background:#fff;cursor:pointer">✕</button>
-  </div>
-  <div id="syncbody">
-    <div style="font-size:10px;color:#888;margin-bottom:6px">Paste your Railway/server URL:</div>
-    <input id="syncurl" type="text" placeholder="https://ssg-sync-xxxx.railway.app" spellcheck="false">
-    <button id="syncconnbtn" class="syncbtn" onclick="syncConnect()">Connect</button>
-    <button id="syncsendbtn" class="syncbtn" onclick="syncPush()">⬆ Push drawing now</button>
-    <button id="syncdiscbtn" class="syncbtn" onclick="syncDisconnect()">Disconnect</button>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-      <input type="checkbox" id="syncauto" checked style="cursor:pointer">
-      <label for="syncauto" style="font-size:10px;color:#5F5E5A;cursor:pointer">Auto-sync on every change</label>
-    </div>
-    <div id="synclog"></div>
+    <span id="syncstatus">Not synced</span>
+    <button id="syncurlbtn" onclick="openSyncModal()">⚡ Live Sync</button>
   </div>
 </div>
 
+<!-- ── MAIN TABS ── -->
+<div id="maintabs">
+  <div class="mtab active" onclick="showTab('overview')">Overview</div>
+  <div class="mtab" onclick="showTab('sketch')">✏️ Sketch</div>
+  <div class="mtab" onclick="showTab('pinmap')">Pin Map</div>
+  <div class="mtab" onclick="showTab('power')">Power Routing</div>
+  <div class="mtab" onclick="showTab('scenarios')">Scenarios</div>
+  <div class="mtab" onclick="showTab('parts')">Parts</div>
+  <div class="mtab" onclick="showTab('notes')">Notes <span id="open-badge" class="badge" style="background:#FAEEDA;color:#633806">0</span></div>
 </div>
+
+<!-- ── CONTENT ── -->
+<div id="content">
+
+<!-- OVERVIEW -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Architecture <span class="badge" style="background:#E1F5EE;color:#04342C">3-MCU distributed</span></div>
+      <div class="row"><div class="rk">Master/Safety</div><div class="rv">Arduino Mega 2560 REV3 — DAQ, relays, kill switch</div></div>
+      <div class="row"><div class="rk">Signal/RPM</div><div class="rv">Arduino Uno R3 — waveform gen, tachometer, back-EMF</div></div>
+      <div class="row"><div class="rk">HMI/WiFi</div><div class="rv">ESP32-WROOM-32D — all displays, joystick, encoder, WiFi</div></div>
+      <div class="row"><div class="rk">Comms</div><div class="rv">Mega↔Uno: Serial1 · Mega↔ESP32: Serial2 (UART)</div></div>
+      <div class="row"><div class="rk">Power rails</div><div class="rv">48V 25A PSU → relay → DROK + PWM ctrl · 5V brain rail · 12V lab rail</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Phase progress</div>
+      <div class="row"><div class="dot done"></div><div class="rk">Phase 1</div><div class="rv">Hardware inventory + pin mapping — IN PROGRESS</div></div>
+      <div class="row"><div class="dot pend"></div><div class="rk">Phase 2</div><div class="rv">Data flow architecture (Mega↔Uno↔ESP32)</div></div>
+      <div class="row"><div class="dot pend"></div><div class="rk">Phase 3</div><div class="rv">Real-time OS scheduler</div></div>
+      <div class="row"><div class="dot pend"></div><div class="rk">Phase 4</div><div class="rv">Mathematical model — decay curve, energy audit</div></div>
+      <div class="row"><div class="dot pend"></div><div class="rk">Phase 5</div><div class="rv">UI/UX per-screen layout</div></div>
+      <div class="row"><div class="dot pend"></div><div class="rk">Phase 6</div><div class="rv">Safety interlocks</div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Open questions <span id="open-count" class="badge" style="background:#FAEEDA;color:#633806">0</span></div>
+      <div id="open-decisions" style="font-size:11px;color:#888">Loading...</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Live sync status</div>
+      <div class="row"><div class="rk">Server</div><div class="rv" id="ov-server">Not connected</div></div>
+      <div class="row"><div class="rk">Last push</div><div class="rv" id="ov-lastpush">—</div></div>
+      <div class="row"><div class="rk">Sketch shapes</div><div class="rv" id="ov-shapes">0</div></div>
+      <div class="row"><div class="rk">Wire connections</div><div class="rv" id="ov-wires">0</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Key decisions locked in</div>
+    <div class="row"><div class="rk">ACS758 placement</div><div class="rv">Grid NC contact (not between PWM→motor). Clean DC measurement.</div></div>
+    <div class="row"><div class="rk">OSC Ch6+Ch7</div><div class="rv">On hold — DROK has own screen, PWM visible on flex Ch3/4</div></div>
+    <div class="row"><div class="rk">Sony transformer</div><div class="rv">Dedicated wall switch always on — never through Arduino relays</div></div>
+    <div class="row"><div class="rk">Feedback injection</div><div class="rv">Always on DC side after rectifier — never AC into transformer</div></div>
+    <div class="row"><div class="rk">BASH ghost preset</div><div class="rv">Oscilloscope ghost waveform = physical POT position memory</div></div>
+    <div class="row"><div class="rk">48V PSU</div><div class="rv">Main lab power source → relay switchboard → DROK + PWM ctrl</div></div>
+  </div>
+</div>
+
+<!-- SKETCH (drawing tool embedded) -->
+<div id="tab-sketch" class="tab-panel"></div>
+
+<!-- PIN MAP -->
+<div id="tab-pinmap" class="tab-panel">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Mega 2560 — analog inputs</div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A0</span><span style="flex:1">ACS758 #1 — motor input current</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A1</span><span style="flex:1">ACS758 #2 — generator output current</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A2</span><span style="flex:1">ACS758 #3 — feedback loop current</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A3</span><span style="flex:1">ACS758 #4 — PSU1 5V brain rail</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A4</span><span style="flex:1">ACS758 #5 — PSU2 12V lab rail</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A5</span><span style="flex:1">ZMPT101B #1 — generator AC voltage</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A6</span><span style="flex:1">ZMPT101B #2 — BASH output voltage</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A7</span><span style="flex:1">ZMPT101B #3 — grid input voltage</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Mega 2560 — digital / relay / UART</div>
+      <div class="pr"><span class="pn" style="background:#EEEDFE;color:#534AB7">0/1</span><span style="flex:1">Serial0 USB debug</span><span class="pt" style="background:#EEEDFE;color:#534AB7">UART0</span></div>
+      <div class="pr"><span class="pn" style="background:#EEEDFE;color:#534AB7">18/19</span><span style="flex:1">Serial1 TX/RX → Uno R3</span><span class="pt" style="background:#EEEDFE;color:#534AB7">UART1</span></div>
+      <div class="pr"><span class="pn" style="background:#EEEDFE;color:#534AB7">16/17</span><span style="flex:1">Serial2 TX/RX → ESP32</span><span class="pt" style="background:#EEEDFE;color:#534AB7">UART2</span></div>
+      <div class="pr"><span class="pn" style="background:#FBEAF0;color:#993556">D3</span><span style="flex:1">A3144 Hall RPM (INT1)</span><span class="pt" style="background:#FBEAF0;color:#993556">INT</span></div>
+      <div class="pr"><span class="pn" style="background:#FBEAF0;color:#993556">D21</span><span style="flex:1">LM393 IR backup (INT2)</span><span class="pt" style="background:#FBEAF0;color:#993556">INT</span></div>
+      <div class="pr"><span class="pn" style="background:#FAECE7;color:#993C1D">D22</span><span style="flex:1">Relay 1 — MASTER grid/loop</span><span class="pt" style="background:#FAECE7;color:#993C1D">RLY</span></div>
+      <div class="pr"><span class="pn" style="background:#FAECE7;color:#993C1D">D23–29</span><span style="flex:1">Relays 2–8 load/aux</span><span class="pt" style="background:#FAECE7;color:#993C1D">RLY</span></div>
+      <div class="pr"><span class="pn" style="background:#FCEBEB;color:#A32D2D">D30</span><span style="flex:1">1-ch relay — master KILL</span><span class="pt" style="background:#FCEBEB;color:#A32D2D">KILL</span></div>
+      <div class="pr"><span class="pn" style="background:#E6F1FB;color:#185FA5">D31</span><span style="flex:1">BASH standby wake HIGH=ON</span><span class="pt" style="background:#E6F1FB;color:#185FA5">OUT</span></div>
+      <div class="pr"><span class="pn" style="background:#E6F1FB;color:#185FA5">D2</span><span style="flex:1">DHT11 temp/humidity</span><span class="pt" style="background:#E6F1FB;color:#185FA5">DIN</span></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Uno R3</div>
+      <div class="pr"><span class="pn" style="background:#EEEDFE;color:#534AB7">0/1</span><span style="flex:1">Serial → Mega Serial1</span><span class="pt" style="background:#EEEDFE;color:#534AB7">UART</span></div>
+      <div class="pr"><span class="pn" style="background:#FBEAF0;color:#993556">D2</span><span style="flex:1">Hall RPM fast INT0</span><span class="pt" style="background:#FBEAF0;color:#993556">INT</span></div>
+      <div class="pr"><span class="pn" style="background:#FBEAF0;color:#993556">D3</span><span style="flex:1">LM393 IR backup INT1</span><span class="pt" style="background:#FBEAF0;color:#993556">INT</span></div>
+      <div class="pr"><span class="pn" style="background:#FAEEDA;color:#854F0B">D9</span><span style="flex:1">PWM sine → BASH pre-amp RCA</span><span class="pt" style="background:#FAEEDA;color:#854F0B">PWM</span></div>
+      <div class="pr"><span class="pn" style="background:#FAEEDA;color:#854F0B">D10</span><span style="flex:1">PWM harmonic channel 2</span><span class="pt" style="background:#FAEEDA;color:#854F0B">PWM</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A0</span><span style="flex:1">Back-EMF motor terminal</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E1F5EE;color:#04342C">A1</span><span style="flex:1">Generator raw voltage sniff</span><span class="pt" style="background:#E1F5EE;color:#04342C">AIN</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">ESP32 <span class="badge" style="background:#FAEEDA;color:#633806">4 conflicts pending</span></div>
+      <div class="pr"><span class="pn" style="background:#FAEEDA;color:#854F0B">4,16,17,25–27,32,33</span><span style="flex:1">TFT 8-bit parallel D0–D7</span><span class="pt" style="background:#FAEEDA;color:#854F0B">PARA</span></div>
+      <div class="pr"><span class="pn" style="background:#EAF3DE;color:#3B6D11">18/19/23</span><span style="flex:1">SPI SCK/MISO/MOSI shared bus</span><span class="pt" style="background:#EAF3DE;color:#3B6D11">SPI</span></div>
+      <div class="pr"><span class="pn" style="background:#EAF3DE;color:#3B6D11">13/15</span><span style="flex:1">TFT CS / XPT2046 touch CS</span><span class="pt" style="background:#EAF3DE;color:#3B6D11">SPI</span></div>
+      <div class="pr"><span class="pn" style="background:#F1EFE8;color:#5F5E5A">21/22</span><span style="flex:1">I2C SDA/SCL → OLED 1.3"</span><span class="pt" style="background:#F1EFE8;color:#5F5E5A">I2C</span></div>
+      <div class="pr"><span class="pn" style="background:#E6F1FB;color:#185FA5">36/39/35</span><span style="flex:1">Joystick X/Y/button (input-only)</span><span class="pt" style="background:#E6F1FB;color:#185FA5">AIN</span></div>
+      <div class="pr"><span class="pn" style="background:#E6F1FB;color:#185FA5">38/37</span><span style="flex:1">Encoder CLK/DT (input-only)</span><span class="pt" style="background:#E6F1FB;color:#185FA5">DIN</span></div>
+      <div class="pr"><span class="pn" style="background:#FCEBEB;color:#A32D2D">0,1,3,9,10</span><span style="flex:1">⚠ Boot/flash pins — verify IO Shield</span><span class="pt" style="background:#FCEBEB;color:#A32D2D">WARN</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- POWER ROUTING -->
+<div id="tab-power" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Operating modes</div>
+    <div class="row"><div class="rk">MODE 1 — DROK precision</div><div class="rv">48V PSU → Relay1 NC → DROK buck → motor · exact voltage control via encoder</div></div>
+    <div class="row"><div class="rk">MODE 2 — PWM speed</div><div class="rv">48V PSU → Relay2 NC → PWM controller → motor · speed knob control</div></div>
+    <div class="row"><div class="rk">MODE 3 — Feedback loop</div><div class="rv">Generator → banana port → Relay3 NO → DROK → motor · grid severed · isolated</div></div>
+    <div class="row"><div class="rk">MODE 4 — BASH signal</div><div class="rv">Uno D9 PWM → BASH pre-amp RCA → BASH amp → test load · Relay4 enables</div></div>
+    <div class="row"><div class="rk">Jumpers J1–J3</div><div class="rv">On relay output terminals — reconfigure routing without rewiring</div></div>
+    <div class="row"><div class="rk">Schottky diodes</div><div class="rv">One-way valves on grid + feedback paths — prevent backfeed through relay</div></div>
+    <div class="row"><div class="rk">Loop closure rule</div><div class="rv">Relay1 must NOT flip to NO until DROK output is within ±5% of motor rated V</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Relay assignment map</div>
+    <div class="row"><div class="rk">Relay 1 (D22)</div><div class="rv">MASTER — NC: 48V PSU→DROK · NO: gen feedback→DROK · ⚡ most critical</div></div>
+    <div class="row"><div class="rk">Relay 2 (D23)</div><div class="rv">NC: 48V PSU→PWM ctrl · NO: standby/disconnect</div></div>
+    <div class="row"><div class="rk">Relay 3 (D24)</div><div class="rv">NC: idle · NO: gen output→DROK input (feedback mode)</div></div>
+    <div class="row"><div class="rk">Relay 4 (D25)</div><div class="rv">Dummy load / BASH enable</div></div>
+    <div class="row"><div class="rk">Relay 5 (D26)</div><div class="rv">Cooling fan 5010 12V</div></div>
+    <div class="row"><div class="rk">Relays 6–8 (D27–29)</div><div class="rv">Aux load banks — expansion</div></div>
+    <div class="row"><div class="rk">1-ch relay (D30)</div><div class="rv">Master grid isolation KILL — cuts all grid power instantly</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Energy audit equations</div>
+    <div class="row"><div class="rk">Pin (grid watts)</div><div class="rv">ACS758#1 reading × ZMPT grid voltage</div></div>
+    <div class="row"><div class="rk">Pout (gen watts)</div><div class="rv">ACS758#2 reading × ZMPT generator voltage</div></div>
+    <div class="row"><div class="rk">Feedback watts</div><div class="rv">ACS758#3 reading × DROK output voltage</div></div>
+    <div class="row"><div class="rk">Efficiency η</div><div class="rv">Pout ÷ Pin × 100%</div></div>
+    <div class="row"><div class="rk">Deficit</div><div class="rv">Pin − Pout = wattage gap preventing self-sustainability</div></div>
+  </div>
+  <div class="card" style="background:#FAEEDA;border-color:#EF9F27">
+    <div class="card-title" style="color:#412402">Open — power routing</div>
+    <div class="row"><div class="dot block"></div><div class="rk">DROK + PWM simultaneous?</div><div class="rv">Can both draw from 48V PSU at same time?</div></div>
+    <div class="row"><div class="dot block"></div><div class="rk">Feedback bypass?</div><div class="rv">Generator ever feed motor DIRECT, bypassing DROK?</div></div>
+    <div class="row"><div class="dot block"></div><div class="rk">48V PSU [33]</div><div class="rv">NOT ORDERED yet</div></div>
+  </div>
+</div>
+
+<!-- SCENARIOS -->
+<div id="tab-scenarios" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Scenario 1 — BASH signal generation <span class="badge" style="background:#9FE1CB;color:#04342C">MAPPED</span></div>
+    <div class="row"><div class="rk">Trigger</div><div class="rv">User selects BASH mode on TFT touchscreen</div></div>
+    <div class="row"><div class="rk">Signal chain</div><div class="rv">TFT → Uno D9 PWM → BASH pre-amp RCA → BASH amplifier → output</div></div>
+    <div class="row"><div class="rk">Physical controls</div><div class="rv">POT1 (Hz) + POT2 (Volume) on pre-amp board — Mega reads via ADC</div></div>
+    <div class="row"><div class="rk">Waveforms</div><div class="rv">Sine · Square · PWM · DC · Triangle · Sawtooth — user selects on TFT</div></div>
+    <div class="row"><div class="rk">OSC channels</div><div class="rv">Ch1: injected signal pre-amp · Ch5: amplifier output · ghost overlay for recall</div></div>
+    <div class="row"><div class="rk">Preset system</div><div class="rv">Save type+Hz+duty+amplitude+ghost waveform → recall loads params + ghost on OSC → turn POTs to match</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Scenario 2 — Motor onboarding wizard <span class="badge" style="background:#9FE1CB;color:#04342C">MAPPED</span></div>
+    <div class="row"><div class="rk">Step 1</div><div class="rv">Motor type: brushed DC / BLDC / AC induction / stepper / unknown</div></div>
+    <div class="row"><div class="rk">Step 2</div><div class="rv">Enter label data: V, A, W, RPM, Kv — system calculates missing values</div></div>
+    <div class="row"><div class="rk">Step 3</div><div class="rv">Gearbox? → enter ratio → system corrects all RPM readings automatically</div></div>
+    <div class="row"><div class="rk">Step 4</div><div class="rv">Select monitors → configures display layout + relay routing</div></div>
+    <div class="row"><div class="rk">Output</div><div class="rv">Named motor profile → all subsequent scenarios pre-configured for that motor</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Scenario 3 — Unknown motor identification <span class="badge" style="background:#9FE1CB;color:#04342C">MAPPED</span></div>
+    <div class="row"><div class="rk">Tests in order</div><div class="rv">Wire count → winding resistance → back-EMF spin test (OSC Ch3) → no-load current → RPM at test V → stall current (brief &lt;1s)</div></div>
+    <div class="row"><div class="rk">Output</div><div class="rv">Auto-fills: motor type · winding R · Kv · no-load RPM · estimated power · stall current</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Scenario 4 — Grid excitation → loop closure → decay analysis <span class="badge" style="background:#FAEEDA;color:#633806">PENDING</span></div>
+    <div class="row"><div class="rk">Phase 1 — Spin-up</div><div class="rv">Grid power → relay NC → motor reaches target RPM</div></div>
+    <div class="row"><div class="rk">Phase 2 — Monitor</div><div class="rv">Watch generator output build — wait for stable voltage within ±5% of target</div></div>
+    <div class="row"><div class="rk">Phase 3 — Isolate</div><div class="rv">Mega flips Relay1 to NO → grid severed → system isolated → telemetry logging begins</div></div>
+    <div class="row"><div class="rk">Phase 4 — Decay</div><div class="rv">Log voltage sag rate + RPM drop rate → fit decay curve → calculate exact wattage deficit</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Scenario 5 — Dynamic resonance tuning <span class="badge" style="background:#E6F1FB;color:#185FA5">PLANNED</span></div>
+    <div class="row"><div class="rk">Goal</div><div class="rv">Find harmonic sweet spot where back-EMF is minimized and efficiency peaks</div></div>
+    <div class="row"><div class="rk">Method</div><div class="rv">Uno sweeps BASH signal frequency while Mega logs Pout/Pin ratio at each step</div></div>
+    <div class="row"><div class="rk">Output</div><div class="rv">Efficiency vs frequency curve → identifies resonant peak → locks to optimal frequency</div></div>
+  </div>
+</div>
+
+<!-- PARTS -->
+<div id="tab-parts" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Parts on hand ✓</div>
+    <div class="row"><div class="dot done"></div><div class="rk">Arduino Mega 2560 REV3</div><div class="rv">On hand ✓ · 256KB flash, 8KB SRAM, 4KB EEPROM, 16MHz</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Inland Uno R3</div><div class="rv">On hand ✓ · ATmega328, 16MHz, 32KB flash</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Inland ESP32-WROOM-32D</div><div class="rv">On hand ✓ · dual-core, WiFi/BT</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">2× E-Ink 2.13" SPI</div><div class="rv">On hand ✓ · persistent display, survives power loss</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">OLED 1.3" 128×64 I2C</div><div class="rv">On hand ✓ · high-speed live readout</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">ESP32-IO Shield</div><div class="rv">On hand ✓</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">8-channel 5V relay module</div><div class="rv">On hand ✓</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">1-channel 5V relay module</div><div class="rv">On hand ✓ · master kill switch</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">3.5" TFT ILI9486 touch</div><div class="rv">On hand ✓ · 480×320, 8-bit parallel, main HMI</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">3.5" TFT SPI no-touch</div><div class="rv">On hand ✓ · secondary dashboard</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">DROK buck converter</div><div class="rv">On hand · NEEDS REPAIR · 6–70V→0–60V 20A</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">PWM motor speed controller</div><div class="rv">On hand ✓ · 12–60V</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">5× ACS758LCB-050B</div><div class="rv">On hand ✓ · ±50A Hall effect current sensors</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">3× ZMPT101B</div><div class="rv">On hand ✓ · AC voltage sensors</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">DHT11</div><div class="rv">On hand ✓ · temp/humidity</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">A3144 Hall Effect</div><div class="rv">On hand ✓ · primary RPM sensor</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">LM393 IR optocoupler</div><div class="rv">On hand ✓ · backup RPM sensor</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">BASH 3-board system</div><div class="rv">On hand ✓ · SMPS + Amplifier + Pre-Amp</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Sony transformer</div><div class="rv">On hand ✓ · hacked for ~35V AC output</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">OSC PSB boards ×4 (AC/DC)</div><div class="rv">Built ✓ · auto + manual scale</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Joystick + Rotary encoder</div><div class="rv">On hand ✓</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Mega screw terminal shield</div><div class="rv">On hand ✓ · pre-soldered</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">Cooling fan 5010 12V</div><div class="rv">On hand ✓</div></div>
+    <div class="row"><div class="dot done"></div><div class="rk">4× LM2596HV buck modules</div><div class="rv">On hand ✓</div></div>
+  </div>
+  <div class="card" style="background:#FAEEDA;border-color:#EF9F27">
+    <div class="card-title" style="color:#412402">Parts to order ⚠</div>
+    <div class="row"><div class="dot block"></div><div class="rk">48V 25A 1200W PSU</div><div class="rv">NOT ORDERED — buy next · main lab power source</div></div>
+    <div class="row"><div class="dot pend"></div><div class="rk">OSC PSB ×4 (DC auto + PWM)</div><div class="rv">Not built — on hold until Ch1–5 proven</div></div>
+    <div class="row"><div class="dot block"></div><div class="rk">Heavy contactors 48V</div><div class="rv">Golf-cart solenoids — not ordered</div></div>
+    <div class="row"><div class="dot block"></div><div class="rk">Schottky diodes 50–100A ×4</div><div class="rv">Stud-mount — not ordered</div></div>
+    <div class="row"><div class="dot pend"></div><div class="rk">Jumper blocks / terminal strips</div><div class="rv">Not ordered</div></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div id="tab-notes" class="tab-panel">
+  <div class="card" style="flex-shrink:0">
+    <div class="card-title">Add note or decision</div>
+    <input type="text" id="ntit" placeholder="Title (e.g. 'DROK simultaneous with PWM — YES')" style="margin-bottom:6px">
+    <textarea id="nbod" rows="2" placeholder="Details..." style="margin-bottom:6px"></textarea>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <select id="ntag">
+        <option value="decision">✓ Decision</option>
+        <option value="question">? Open question</option>
+        <option value="todo">⚙ To-do</option>
+        <option value="idea">💡 Idea</option>
+      </select>
+      <button class="btn-p" onclick="addNote()">Add</button>
+    </div>
+  </div>
+  <div id="nlist"></div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<!-- SYNC MODAL -->
+<div id="syncmodal">
+  <div id="syncbox">
+    <h3>⚡ Live Sync with Claude</h3>
+    <p style="font-size:11px;color:#888;margin-bottom:10px">Connect to Railway server so Claude can see your drawings in real time</p>
+    <input type="text" id="syncurl" placeholder="https://ssg-sync-server-production.up.railway.app" style="margin-bottom:8px;font-family:monospace;font-size:11px">
+    <div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="btn-p" onclick="syncConnect()">Connect</button>
+      <button onclick="syncDisconnect()">Disconnect</button>
+      <button onclick="closeSyncModal()" style="margin-left:auto">Close</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <input type="checkbox" id="syncauto" checked>
+      <label for="syncauto" style="font-size:11px;color:#5F5E5A;cursor:pointer">Auto-sync on every drawing change</label>
+    </div>
+    <div id="synclog" style="font-size:10px;color:#888;max-height:80px;overflow-y:auto;background:#F8F7F4;border-radius:5px;padding:6px;font-family:monospace"></div>
+  </div>
+</div>
+
+<!-- WIRE HINT -->
 <div id="wire-hint">Click another pin to connect — Esc to cancel</div>
+
+
 <script>
+
+'use strict';
+// ── HUB: TAB NAVIGATION ──
+function showTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  const panel = document.getElementById('tab-'+id);
+  const tabs = document.querySelectorAll('.mtab');
+  const tabMap = {overview:0,sketch:1,pinmap:2,power:3,scenarios:4,parts:5,notes:6};
+  if(panel) panel.classList.add('active');
+  if(tabs[tabMap[id]]) tabs[tabMap[id]].classList.add('active');
+  if(id==='sketch') setTimeout(()=>{ initCanvas(); resizeCvs(); },50);
+}
+
+// ── NOTES ──
+let notes = [];
+const DEF_NOTES = [
+  {id:1,title:"ACS758 between PWM→motor removed",body:"Noisy on chopped PWM DC. Relay NC contact captures same data cleanly.",tag:"decision",ts:"Session 1"},
+  {id:2,title:"OSC Ch6+Ch7 on hold",body:"DROK has own screen. PWM visible on flex Ch3/4. Hold PSB [39-42] until Ch1-5 proven.",tag:"decision",ts:"Session 1"},
+  {id:3,title:"Sony transformer — dedicated wall switch always",body:"Never through Arduino relays. Brains always powered.",tag:"decision",ts:"Session 1"},
+  {id:4,title:"ESP32 boot pin conflicts",body:"GPIO 0,1,3,9,10 — verify IO Shield datasheet before soldering.",tag:"question",ts:"Session 1"},
+  {id:5,title:"DROK + PWM simultaneous?",body:"Can both draw from 48V PSU at same time? Affects relay wiring.",tag:"question",ts:"Session 1"},
+  {id:6,title:"Fix DROK buck converter",body:"Item [14] on hand but needs repair before use.",tag:"todo",ts:"Session 1"},
+  {id:7,title:"48V PSU not yet ordered",body:"Main lab power source — buy next.",tag:"todo",ts:"Session 1"},
+];
+const TC={decision:'#E1F5EE|#04342C|#5DCAA5',question:'#FAEEDA|#633806|#EF9F27',todo:'#E6F1FB|#185FA5|#85B7EB',idea:'#EEEDFE|#534AB7|#AFA9EC'};
+
+function renderNotes(){
+  const el=document.getElementById('nlist'); if(!el)return;
+  el.innerHTML = notes.length ? notes.map((n,i)=>{
+    const[bg,fg,bc]=(TC[n.tag]||'#F1EFE8|#444|#ccc').split('|');
+    return `<div class="ni" style="background:${bg};border-color:${bc};color:${fg}">
+      <div style="flex:1"><div style="font-weight:500;margin-bottom:2px">${n.title}</div>
+      <div style="opacity:.85;font-size:10px">${n.body}</div>
+      <div style="font-size:9px;opacity:.7;margin-top:2px">${n.tag.toUpperCase()} · ${n.ts}</div></div>
+      <span class="ndel" onclick="delNote(${i})">✕</span></div>`;
+  }).join('') : '<div style="font-size:11px;color:#888;padding:8px">No notes yet.</div>';
+
+  const open = notes.filter(n=>n.tag==='question');
+  const oc = document.getElementById('open-count');
+  const ob = document.getElementById('open-badge');
+  if(oc) oc.textContent = open.length;
+  if(ob) ob.textContent = open.length;
+  const od = document.getElementById('open-decisions');
+  if(od) od.innerHTML = open.length
+    ? open.map(n=>`<div class="row"><div class="dot pend"></div><div class="rv">${n.title}</div></div>`).join('')
+    : '<div style="font-size:11px;color:#888">No open questions!</div>';
+}
+
+async function addNote(){
+  const t = document.getElementById('ntit').value.trim(); if(!t)return;
+  notes.unshift({id:Date.now(),title:t,body:document.getElementById('nbod').value.trim(),tag:document.getElementById('ntag').value,ts:new Date().toLocaleDateString()});
+  document.getElementById('ntit').value=''; document.getElementById('nbod').value='';
+  try{ await window.storage.set('ssg-notes',JSON.stringify(notes)); }catch(e){}
+  renderNotes();
+}
+async function delNote(i){ notes.splice(i,1); try{await window.storage.set('ssg-notes',JSON.stringify(notes));}catch(e){} renderNotes(); }
+
+// ── SYNC ──
+let syncConnected=false, syncURL='', syncLogLines=[], _syncThrottle=null, _pollInterval=null;
+
+function openSyncModal(){ document.getElementById('syncmodal').classList.add('open'); }
+function closeSyncModal(){ document.getElementById('syncmodal').classList.remove('open'); }
+// click outside closes
+document.getElementById('syncmodal').addEventListener('click',e=>{if(e.target.id==='syncmodal')closeSyncModal();});
+
+function syncLog(msg){
+  const now=new Date().toLocaleTimeString();
+  syncLogLines.unshift('['+now+'] '+msg);
+  if(syncLogLines.length>14)syncLogLines.pop();
+  const el=document.getElementById('synclog');
+  if(el)el.textContent=syncLogLines.join('\n');
+}
+function syncSetStatus(s){
+  const dot=document.getElementById('syncdot');
+  const st=document.getElementById('syncstatus');
+  const btn=document.getElementById('syncurlbtn');
+  const ov=document.getElementById('ov-server');
+  if(s==='connected'){
+    dot.className='conn'; st.textContent='Live';
+    btn.textContent='🟢 Live Sync'; btn.classList.add('live');
+    if(ov)ov.textContent=syncURL; syncConnected=true;
+  } else if(s==='error'){
+    dot.className='err'; st.textContent='Error';
+    btn.textContent='🔴 Live Sync'; btn.classList.remove('live');
+    if(ov)ov.textContent='Connection error'; syncConnected=false;
+  } else {
+    dot.className=''; st.textContent='Not synced';
+    btn.textContent='⚡ Live Sync'; btn.classList.remove('live');
+    if(ov)ov.textContent='Not connected'; syncConnected=false;
+  }
+}
+function syncConnect(){
+  let url=(document.getElementById('syncurl').value||'').trim().replace(/\/+$/,'');
+  if(!url){syncLog('Paste server URL first');return;}
+  syncURL=url; syncLog('Testing '+url+'...');
+  fetch(url+'/state')
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(d=>{
+      syncSetStatus('connected');
+      syncLog('✓ Connected — '+d.clients+' client(s)');
+      syncPush();
+      clearInterval(_pollInterval);
+      _pollInterval=setInterval(()=>{
+        fetch(url+'/state').then(r=>r.json()).then(d=>{
+          const s=d.state;
+          const ov=document.getElementById('ov-shapes');if(ov)ov.textContent=(s.shapes||[]).length;
+          const ow=document.getElementById('ov-wires');if(ow)ow.textContent=(s.wires||[]).length;
+          document.getElementById('syncstatus').textContent='Live · '+(s.shapes||[]).length+' shapes';
+        }).catch(()=>{syncSetStatus('error');clearInterval(_pollInterval);});
+      },3000);
+    })
+    .catch(e=>{syncSetStatus('error');syncLog('Cannot reach: '+e.message);});
+}
+function syncDisconnect(){clearInterval(_pollInterval);syncSetStatus('disconnected');syncConnected=false;syncURL='';syncLog('Disconnected');}
+function syncGetPayload(){
+  const ser=shapes.map(s=>{const{imgEl,_img,...r}=s;return r;});
+  return{shapes:ser,wires:JSON.parse(JSON.stringify(wires)),dwgName:document.getElementById('dwgname').value,ts:new Date().toISOString(),_source:'local'};
+}
+function syncPush(){
+  if(!syncURL||!syncConnected){syncLog('Not connected');return;}
+  const payload=syncGetPayload();
+  fetch(syncURL+'/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json())
+    .then(d=>{
+      syncLog('⬆ Synced · '+payload.shapes.length+' shapes · '+payload.wires.length+' wires');
+      const lp=document.getElementById('ov-lastpush');if(lp)lp.textContent=new Date().toLocaleTimeString();
+    })
+    .catch(e=>syncLog('Sync error: '+e.message));
+}
+
+// ── INIT ──
+async function hubInit(){
+  // Load notes
+  try{const r=await window.storage.get('ssg-notes');notes=r?JSON.parse(r.value):[...DEF_NOTES];}catch(e){notes=[...DEF_NOTES];}
+  // Load saved sync URL
+  try{const r=await window.storage.get('ssg-syncurl');if(r&&r.value){document.getElementById('syncurl').value=r.value;}}catch(e){}
+  renderNotes();
+}
+
+// ═══════════════════ DRAWING ENGINE ═══════════════════
+
 'use strict';
 // STATE
 let shapes=[], sel=null, tool='select', color='#2C2C2A', strokeW=2, useFill=false;
@@ -270,12 +629,23 @@ function tou(v){return(v*US[unit]).toFixed(unit==='px'?0:2)}
 function sid(){return Date.now()+Math.floor(Math.random()*99999)}
 
 // CANVAS
-const wrap=document.getElementById('cwrap');
-const cvs=document.getElementById('cvs');
-const ctx=cvs.getContext('2d');
-const tbox=document.getElementById('tbox');
+let wrap, cvs, ctx, tbox;
+let drawInited = false;
+function initCanvas(){
+  if(drawInited) return;
+  wrap = document.getElementById('cwrap');
+  cvs  = document.getElementById('cvs');
+  if(!cvs || !wrap) return;
+  ctx  = cvs.getContext('2d');
+  tbox = document.getElementById('tbox');
+  drawInited = true;
+  registerCanvasEvents();
+  resizeCvs();
+  render();
+}
 
 function resizeCvs(){
+  if(!cvs||!wrap) return;
   const r=wrap.getBoundingClientRect();
   cvs.width=Math.max(200,r.width); cvs.height=Math.max(100,r.height);
   render();
@@ -574,6 +944,7 @@ function drawWires(){
   }
 }
 function render(){
+  if(!ctx||!cvs) return;
   ctx.clearRect(0,0,cvs.width,cvs.height);
   ctx.fillStyle='#ECEAE6';ctx.fillRect(0,0,cvs.width,cvs.height);
   drawGrid();
@@ -609,6 +980,7 @@ function delSelected(){if(!sel)return;saveU();wires=wires.filter(w=>w.fromId!==s
 // MOUSE
 function getCM(e){const r=cvs.getBoundingClientRect();return{sx:e.clientX-r.left,sy:e.clientY-r.top,...s2w(e.clientX-r.left,e.clientY-r.top)};}
 
+function registerCanvasEvents(){
 cvs.addEventListener('wheel',e=>{e.preventDefault();const r=cvs.getBoundingClientRect();doZoom(e.deltaY<0?1.1:0.9,e.clientX-r.left,e.clientY-r.top);},{passive:false});
 
 cvs.addEventListener('mousedown',e=>{
@@ -741,6 +1113,7 @@ cvs.addEventListener('dblclick',e=>{
   const p=getCM(e);const hit=findShape(p.x,p.y);
   if(hit&&['text','note','label'].includes(hit.type)){sel=hit.id;startTE(hit);}
 });
+} // end registerCanvasEvents
 
 // RESIZE
 function applyResize(s,handle,wx,wy){
@@ -1202,121 +1575,8 @@ function loadBlueprint(){
 }
 
 
-// ── LIVE SYNC (HTTP polling + REST POST — works through every proxy) ──
-let syncConnected = false;
-let syncURL = '';
-let syncLogLines = [];
-let _syncThrottle = null;
-let _pollInterval = null;
+// Sync handled by hub layer
 
-function toggleSync(){
-  const p = document.getElementById('syncpanel');
-  p.classList.toggle('open');
-  document.getElementById('synctoggle').classList.toggle('live', p.classList.contains('open'));
-}
-
-function syncLog(msg){
-  const now = new Date().toLocaleTimeString();
-  syncLogLines.unshift('['+now+'] '+msg);
-  if(syncLogLines.length>14) syncLogLines.pop();
-  const el = document.getElementById('synclog');
-  if(el) el.textContent = syncLogLines.join('\n');
-}
-
-function syncSetStatus(s){
-  const dot = document.getElementById('syncdot');
-  const st  = document.getElementById('syncstatus');
-  const tog = document.getElementById('synctoggle');
-  const connBtn = document.getElementById('syncconnbtn');
-  const sendBtn = document.getElementById('syncsendbtn');
-  const discBtn = document.getElementById('syncdiscbtn');
-  if(s==='connected'){
-    dot.className='conn'; st.textContent='Live — connected';
-    tog.textContent='🟢 Live Sync'; tog.style.background='#1D9E75'; tog.style.color='#fff';
-    connBtn.style.display='none'; sendBtn.style.display='block'; discBtn.style.display='block';
-    syncConnected=true;
-  } else if(s==='error'){
-    dot.className='err'; st.textContent='Error — check URL';
-    tog.textContent='🔴 Live Sync'; tog.style.background='#E24B4A'; tog.style.color='#fff';
-    connBtn.style.display='block'; sendBtn.style.display='none'; discBtn.style.display='none';
-    syncConnected=false;
-  } else {
-    dot.className=''; st.textContent='Not connected';
-    tog.textContent='🔴 Live Sync'; tog.style.background=''; tog.style.color='';
-    connBtn.style.display='block'; sendBtn.style.display='none'; discBtn.style.display='none';
-    syncConnected=false;
-  }
-}
-
-function syncConnect(){
-  let url = document.getElementById('syncurl').value.trim().replace(/\/+$/, '');
-  if(!url){ syncLog('Paste server URL first'); return; }
-  syncURL = url;
-  syncLog('Testing ' + url + ' ...');
-
-  // Simple GET /state to verify server is reachable
-  fetch(url + '/state')
-    .then(r => {
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(d => {
-      syncSetStatus('connected');
-      syncLog('✓ Connected — server OK (' + (d.clients||0) + ' clients)');
-      syncLog('Claude can now read your drawing at any time');
-      syncPush(); // push current state immediately
-      // Poll every 3s to keep connection alive indicator fresh
-      clearInterval(_pollInterval);
-      _pollInterval = setInterval(()=>{
-        fetch(url+'/state').then(r=>r.json()).then(d=>{
-          document.getElementById('syncstatus').textContent='Live · '+d.state.shapes?.length+' shapes';
-        }).catch(()=>{syncSetStatus('error');syncLog('Lost connection');clearInterval(_pollInterval);});
-      }, 3000);
-    })
-    .catch(e => {
-      syncSetStatus('error');
-      syncLog('Cannot reach server: ' + e.message);
-      syncLog('Make sure URL has no trailing slash');
-      syncLog('Example: https://ssg-sync-server-production.up.railway.app');
-    });
-}
-
-function syncDisconnect(){
-  clearInterval(_pollInterval); _pollInterval=null;
-  syncSetStatus('disconnected');
-  syncConnected = false;
-  syncURL = '';
-  syncLog('Disconnected');
-}
-
-function syncGetPayload(){
-  const ser = shapes.map(s=>{const{imgEl,_img,...r}=s;return r;});
-  return {
-    shapes: ser,
-    wires: JSON.parse(JSON.stringify(wires)),
-    dwgName: document.getElementById('dwgname').value,
-    ts: new Date().toISOString(),
-    _source: 'local'
-  };
-}
-
-function syncPush(){
-  if(!syncURL || !syncConnected){ syncLog('Not connected'); return; }
-  const payload = syncGetPayload();
-  fetch(syncURL + '/state', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
-  .then(r => {
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  })
-  .then(d => syncLog('⬆ Synced · ' + payload.shapes.length + ' shapes · ' + payload.wires.length + ' wires'))
-  .catch(e => { syncLog('Sync error: ' + e.message); });
-}
-
-// Auto-sync is triggered from saveU() — no render override needed
 
 async function init(){
   buildPalette();resizeCvs();await loadGallery();
@@ -1324,4 +1584,14 @@ async function init(){
   render();
 }
 init();
-</script></body></html>
+
+// ═══════════════════ STARTUP ═══════════════════
+async function init(){
+  buildPalette();
+  await loadGallery();
+  window.addEventListener('resize', ()=>{ if(drawInited) resizeCvs(); });
+  await hubInit();
+}
+init();
+</script>
+</body></html>
