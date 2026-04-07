@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"><title>SSG Lab — Drawing Tool</title>
+<style>
+html,body{height:100%;overflow:hidden;margin:0;padding:0}
+*{box-sizing:border-box;user-select:none}
+body{font-family:system-ui,sans-serif;font-size:12px;background:#F8F7F4;color:#2C2C2A;display:flex;flex-direction:column}
+#app{display:flex;flex-direction:column;width:100%;height:100vh;overflow:hidden}
+#topbar{display:flex;align-items:center;gap:4px;padding:4px 7px;background:#fff;border-bottom:0.5px solid #D3D1C7;flex-wrap:wrap;flex-shrink:0}
+.tbb{padding:3px 8px;border:0.5px solid #D3D1C7;border-radius:5px;background:#fff;cursor:pointer;font-size:11px;font-family:inherit;color:#2C2C2A;white-space:nowrap}
+.tbb:hover{background:#E1F5EE;border-color:#1D9E75}
+.tbb.on{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.tbb.bp{background:#185FA5;color:#fff;border-color:#185FA5}
+.tsep{width:0.5px;height:18px;background:#D3D1C7;flex-shrink:0}
+select{font-size:11px;padding:2px 4px;border:0.5px solid #D3D1C7;border-radius:5px;font-family:inherit;background:#fff}
+label{font-size:10px;color:#5F5E5A;white-space:nowrap}
+#main{display:flex;flex:1;min-height:0}
+#tlbar{display:flex;flex-direction:column;gap:3px;padding:5px 4px;background:#fff;border-right:0.5px solid #D3D1C7;align-items:center;overflow-y:auto;flex-shrink:0;min-width:42px}
+.tb{width:32px;height:32px;border:0.5px solid #D3D1C7;border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;padding:0;color:#2C2C2A;flex-shrink:0;line-height:1}
+.tb:hover,.tb.on{background:#E1F5EE;border-color:#1D9E75}
+.tb.on{background:#1D9E75;color:#fff}
+.tsep2{width:24px;height:0.5px;background:#D3D1C7;flex-shrink:0;margin:1px 0}
+.tg{font-size:8px;color:#888;text-align:center;line-height:1}
+#cwrap{flex:1;overflow:hidden;position:relative;background:#ECEAE6;cursor:crosshair}
+#cvs{display:block}
+#tbox{position:fixed;background:rgba(255,255,255,.95);border:1.5px solid #1D9E75;padding:3px 6px;font-size:14px;font-family:system-ui;outline:none;min-width:80px;min-height:26px;resize:both;display:none;z-index:100;border-radius:4px}
+#inspector{width:185px;background:#fff;border-left:0.5px solid #D3D1C7;overflow-y:auto;flex-shrink:0}
+.isec{padding:7px 9px;border-bottom:0.5px solid #F1EFE8}
+.ititle{font-size:9px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.irow{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.ilbl{font-size:10px;color:#5F5E5A;min-width:32px}
+input.iv{width:72px;padding:2px 4px;border:0.5px solid #D3D1C7;border-radius:4px;font-size:11px;font-family:inherit}
+input.iv:focus{outline:none;border-color:#1D9E75}
+textarea.inote{width:100%;font-size:11px;font-family:system-ui;border:0.5px solid #D3D1C7;border-radius:5px;padding:5px;resize:vertical;min-height:60px}
+textarea.inote:focus{outline:none;border-color:#1D9E75}
+#sbar{padding:2px 10px;background:#fff;border-top:0.5px solid #D3D1C7;font-size:10px;color:#888;display:flex;gap:14px;flex-shrink:0;flex-wrap:wrap}
+#sympanel{width:196px;background:#fff;border-left:0.5px solid #D3D1C7;display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+#sympanel.open{display:flex}
+#symhead{padding:6px 8px;border-bottom:0.5px solid #F1EFE8;display:flex;align-items:center;gap:5px;flex-shrink:0}
+#symtabs{display:flex;gap:3px;padding:4px 5px;border-bottom:0.5px solid #F1EFE8;flex-wrap:wrap;flex-shrink:0}
+.symtab{padding:2px 6px;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer;font-size:9px;background:#F1EFE8;color:#5F5E5A}
+.symtab.on{background:#185FA5;color:#fff;border-color:#185FA5}
+#symgrid{flex:1;overflow-y:auto;padding:5px;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.symcell{background:#F8F7F4;border:0.5px solid #D3D1C7;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:5px 3px 3px;gap:2px}
+.symcell:hover{background:#E1F5EE;border-color:#1D9E75}
+.symcell svg{overflow:visible}
+.symcell span{font-size:8px;color:#5F5E5A;text-align:center;line-height:1.2}
+.stamping-cursor{cursor:copy!important}
+#galp{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+#galbox{background:#fff;border-radius:12px;padding:16px;width:min(700px,90vw);max-height:80vh;overflow-y:auto}
+.gg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.gc{background:#F8F7F4;border:0.5px solid #D3D1C7;border-radius:8px;overflow:hidden;cursor:pointer}
+.gc:hover{border-color:#1D9E75}
+.gt{width:100%;height:75px;object-fit:contain;background:#ECEAE6;display:block;border-bottom:0.5px solid #F1EFE8}
+.gn{font-size:11px;font-weight:500;padding:4px 6px 2px}
+.gm{font-size:9px;padding:0 6px 5px;color:#888}
+.cdot{width:17px;height:17px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.cdot.on{border-color:#2C2C2A}
+.att{display:flex;align-items:center;gap:5px;padding:4px 7px;background:#F8F7F4;border:0.5px solid #D3D1C7;border-radius:5px;margin-bottom:3px;font-size:10px}
+.adel{color:#A32D2D;cursor:pointer;padding:1px 4px;border-radius:3px;font-size:10px}
+.adel:hover{background:#FCEBEB}
+/* LIVE SYNC */
+#syncpanel{position:fixed;bottom:36px;right:10px;width:260px;background:#fff;border:1px solid #D3D1C7;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:400;display:none;overflow:hidden}
+#syncpanel.open{display:block}
+#synctop{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:0.5px solid #F1EFE8;background:#F8F7F4}
+#syncdot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0;transition:background .3s}
+#syncdot.conn{background:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.2)}
+#syncdot.err{background:#E24B4A}
+#syncbody{padding:12px}
+#syncurl{width:100%;font-size:11px;padding:5px 8px;border:0.5px solid #D3D1C7;border-radius:5px;font-family:monospace;margin-bottom:8px}
+#syncurl:focus{outline:none;border-color:#1D9E75}
+.syncbtn{width:100%;padding:5px 0;font-size:11px;border-radius:5px;cursor:pointer;font-family:inherit;margin-bottom:5px;border:0.5px solid #D3D1C7}
+#syncconnbtn{background:#1D9E75;color:#fff;border-color:#1D9E75}
+#syncconnbtn:hover{background:#0F6E56}
+#syncsendbtn{background:#185FA5;color:#fff;border-color:#185FA5;display:none}
+#syncsendbtn:hover{background:#0C447C}
+#syncdiscbtn{background:#FCEBEB;color:#A32D2D;border-color:#E24B4A;display:none}
+#synclog{font-size:9px;color:#888;max-height:60px;overflow-y:auto;line-height:1.6;padding:4px 0}
+#syncstatus{font-size:10px;font-weight:500;color:#5F5E5A}
+#synctoggle{padding:4px 10px;font-size:11px;border:0.5px solid #D3D1C7;border-radius:5px;background:#F1EFE8;cursor:pointer;color:#5F5E5A}
+#synctoggle.live{background:#1D9E75;color:#fff;border-color:#1D9E75}
+
+/* PIN CONNECTION WIRES */
+.conn-badge{font-size:9px;color:#185FA5;background:#E6F1FB;border-radius:3px;padding:1px 5px;display:inline-block;margin-top:2px;cursor:pointer}
+.conn-badge:hover{background:#B5D4F4}
+#wire-hint{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(24,95,165,.9);color:#fff;font-size:11px;padding:5px 14px;border-radius:20px;display:none;z-index:500;pointer-events:none}
+
+/* PINS */
+.pin-row{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid #F1EFE8;font-size:10px}
+.pin-row:last-child{border-bottom:none}
+.pin-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px solid #fff;box-shadow:0 0 0 1px #888}
+.pin-type-sel{font-size:10px;padding:1px 3px;border:0.5px solid #D3D1C7;border-radius:3px;font-family:inherit;background:#fff}
+.pin-name-in{width:60px;font-size:10px;padding:1px 4px;border:0.5px solid #D3D1C7;border-radius:3px;font-family:inherit}
+.pin-name-in:focus,.pin-type-sel:focus{outline:none;border-color:#1D9E75}
+#pinsec{padding:7px 9px;border-bottom:0.5px solid #F1EFE8}
+#pinsec .ititle{margin-bottom:5px}
+#pinlist{max-height:160px;overflow-y:auto;margin-bottom:5px}
+
+</style>
+</head><body>
+<div id="app">
+<div id="topbar">
+  <button class="tbb" onclick="newDwg()">New</button>
+  <button class="tbb" onclick="saveDwg()">Save</button>
+  <button class="tbb bp" onclick="loadBlueprint()">⚡ Blueprint</button>
+  <button class="tbb" onclick="exportPNG()">⬇ PNG</button>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="doUndo()">↩</button>
+  <button class="tbb" onclick="doRedo()">↪</button>
+  <div class="tsep"></div>
+  <div id="cpal" style="display:flex;gap:3px;align-items:center"></div>
+  <input type="color" id="cpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" oninput="setColor(this.value)">
+  <div class="tsep"></div>
+  <label>W</label>
+  <select id="swsel" onchange="strokeW=+this.value"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="5">5</option><option value="8">8</option></select>
+  <label>Fill</label>
+  <input type="color" id="fpick" style="width:22px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px;cursor:pointer" value="#E1F5EE">
+  <button class="tbb" id="ftog" onclick="toggleFill()">No fill</button>
+  <div class="tsep"></div>
+  <button class="tbb on" id="gbtn" onclick="toggleGrid()">Grid</button>
+  <button class="tbb on" id="sbtn" onclick="toggleSnap()">Snap</button>
+  <label>Unit</label>
+  <select id="usel" onchange="unit=this.value;render()"><option value="px">px</option><option value="mm">mm</option><option value="in">in</option></select>
+  <label>Grid</label>
+  <select id="gsel" onchange="gridPx=+this.value;render()"><option value="10">10</option><option value="20" selected>20</option><option value="40">40</option></select>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="doZoom(.8)">−</button>
+  <span id="zlbl" style="font-size:11px;min-width:36px;text-align:center">100%</span>
+  <button class="tbb" onclick="doZoom(1.25)">+</button>
+  <button class="tbb" onclick="fitView()">Fit</button>
+  <div class="tsep"></div>
+  <button class="tbb" onclick="openGallery()">📁 Gallery</button>
+  <button class="tbb" id="symbtn" onclick="toggleSymPanel()">⚡ Symbols</button>
+  <button id="synctoggle" onclick="toggleSync()">🔴 Live Sync</button>
+  <input type="text" id="dwgname" value="Untitled" style="font-size:11px;border:0.5px solid #D3D1C7;border-radius:5px;padding:2px 6px;width:110px;font-family:inherit">
+</div>
+<div id="main">
+<div id="tlbar">
+  <button class="tb on" id="t-select" onclick="setTool('select')" title="Select S">↖</button><div class="tg">sel</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-rect" onclick="setTool('rect')" title="R" style="font-size:11px;font-weight:600">▭</button><div class="tg">rect</div>
+  <button class="tb" id="t-rrect" onclick="setTool('rrect')" title="Rounded rect" style="font-size:11px">▢</button><div class="tg">round</div>
+  <button class="tb" id="t-circle" onclick="setTool('circle')" title="C">◯</button><div class="tg">circle</div>
+  <button class="tb" id="t-tri" onclick="setTool('tri')" title="Triangle">△</button><div class="tg">tri</div>
+  <button class="tb" id="t-diamond" onclick="setTool('diamond')" title="Diamond">◇</button><div class="tg">diam</div>
+  <button class="tb" id="t-hex" onclick="setTool('hex')" title="Hexagon">⬡</button><div class="tg">hex</div>
+  <button class="tb" id="t-para" onclick="setTool('para')" title="Parallelogram" style="font-size:11px">▱</button><div class="tg">para</div>
+  <button class="tb" id="t-cyl" onclick="setTool('cyl')" title="Cylinder" style="font-size:11px">⬭</button><div class="tg">cyl</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-line" onclick="setTool('line')" title="L" style="font-weight:600">╱</button><div class="tg">line</div>
+  <button class="tb" id="t-arrow" onclick="setTool('arrow')" title="A">→</button><div class="tg">arrow</div>
+  <button class="tb" id="t-darrow" onclick="setTool('darrow')" title="Double arrow">↔</button><div class="tg">2-arr</div>
+  <button class="tb" id="t-dim" onclick="setTool('dim')" title="Dimension" style="font-size:10px">⟷</button><div class="tg">dim</div>
+  <div class="tsep2"></div>
+  <button class="tb" id="t-text" onclick="setTool('text')" title="T" style="font-weight:700">T</button><div class="tg">text</div>
+  <button class="tb" id="t-note" onclick="setTool('note')" title="N">📝</button><div class="tg">note</div>
+  <button class="tb" id="t-label" onclick="setTool('label')" title="Label" style="font-size:10px;font-weight:600">[A]</button><div class="tg">label</div>
+  <div class="tsep2"></div>
+  <button class="tb" onclick="document.getElementById('fimp').click()" title="Import image">🖼</button><div class="tg">img</div>
+  <input type="file" id="fimp" accept="image/*,.pdf" multiple style="display:none" onchange="handleFile(event)">
+  <div class="tsep2"></div>
+  <button class="tb" onclick="delSelected()" title="Del" style="color:#A32D2D;font-size:15px">✕</button><div class="tg">del</div>
+</div>
+<div id="cwrap"><canvas id="cvs"></canvas><textarea id="tbox" rows="1" spellcheck="false"></textarea></div>
+<div id="inspector">
+  <div class="isec">
+    <div class="ititle">Shape</div>
+    <div id="inosel" style="font-size:11px;color:#888">Nothing selected</div>
+    <div id="iprops" style="display:none">
+      <div class="irow"><span class="ilbl">X</span><input class="iv" id="ix" onchange="setPropX(+this.value)"></div>
+      <div class="irow"><span class="ilbl">Y</span><input class="iv" id="iy" onchange="setPropY(+this.value)"></div>
+      <div class="irow"><span class="ilbl">W</span><input class="iv" id="iw" onchange="setPropW(+this.value)"></div>
+      <div class="irow"><span class="ilbl">H</span><input class="iv" id="ih" onchange="setPropH(+this.value)"></div>
+      <div class="irow" id="ifontr" style="display:none"><span class="ilbl">Sz</span><input class="iv" id="ifs" type="number" min="6" max="120" onchange="setProp('fontSize',+this.value);render()"></div>
+      <div class="irow"><span class="ilbl">Color</span><input type="color" id="icol" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('color',this.value);render()"></div>
+      <div class="irow"><span class="ilbl">Fill</span><input type="color" id="ifill" style="width:40px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px" onchange="setProp('fill',this.value);render()">
+        <button style="font-size:9px;padding:1px 5px;border:0.5px solid #D3D1C7;border-radius:3px;cursor:pointer;background:#fff" onclick="setProp('fill',null);render()">None</button></div>
+    </div>
+  </div>
+
+  <div id="pinsec" style="display:none">
+    <div class="ititle">Pins / Contacts</div>
+    <div id="pinlist"></div>
+    <button style="width:100%;font-size:10px;padding:2px 0;border:0.5px dashed #1D9E75;border-radius:5px;background:#E1F5EE;color:#04342C;cursor:pointer" onclick="addPin()">+ Add pin</button>
+  </div>
+  <div class="isec" id="itextsec" style="display:none">
+    <div class="ititle">Text</div>
+    <textarea class="inote" id="itextval" rows="3" oninput="setProp('text',this.value);render()"></textarea>
+  </div>
+  <div class="isec">
+    <div class="ititle">Drawing note</div>
+    <textarea class="inote" id="dnote" placeholder="Notes about this drawing..." oninput="dwgNote=this.value"></textarea>
+  </div>
+  <div class="isec">
+    <div class="ititle">Attachments</div>
+    <div id="attlist"></div>
+    <button class="tbb" onclick="document.getElementById('fimp').click()" style="width:100%;margin-top:3px;font-size:10px">+ Attach file</button>
+  </div>
+</div>
+<div id="sympanel">
+  <div id="symhead">
+    <span style="font-size:10px;font-weight:500;color:#888;text-transform:uppercase;flex:1">Symbols</span>
+    <input type="file" id="svgfile" accept=".svg" style="display:none" onchange="loadSVGLib(event)">
+    <button class="tbb" onclick="document.getElementById('svgfile').click()" style="font-size:9px;padding:2px 5px">Load SVG</button>
+    <button class="tbb" onclick="toggleSymPanel()" style="font-size:10px;padding:2px 6px">✕</button>
+  </div>
+  <div id="symtabs"></div>
+  <div id="symgrid"></div>
+</div>
+</div>
+<div id="sbar">
+  <span id="sbpos">0, 0</span><span id="sbsel"></span><span id="sbmsg"></span>
+  <span style="margin-left:auto;font-size:9px">S=select R=rect C=circle L=line A=arrow T=text N=note · Space+drag=pan · Scroll=zoom · Del=delete · Shift+click sym=multi-stamp</span>
+</div>
+<div id="galp" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center">
+  <div id="galbox">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:500">Saved drawings</span>
+      <button class="tbb" onclick="closeGallery()">Close</button>
+    </div>
+    <div class="gg" id="gallist"></div>
+  </div>
+</div>
+
+<!-- LIVE SYNC PANEL -->
+<div id="syncpanel">
+  <div id="synctop">
+    <div id="syncdot"></div>
+    <span id="syncstatus">Not connected</span>
+    <button id="synctoggle2" onclick="toggleSync()" style="margin-left:auto;font-size:10px;padding:2px 6px;border:0.5px solid #D3D1C7;border-radius:4px;background:#fff;cursor:pointer">✕</button>
+  </div>
+  <div id="syncbody">
+    <div style="font-size:10px;color:#888;margin-bottom:6px">Paste your Railway/server URL:</div>
+    <input id="syncurl" type="text" placeholder="https://ssg-sync-xxxx.railway.app" spellcheck="false">
+    <button id="syncconnbtn" class="syncbtn" onclick="syncConnect()">Connect</button>
+    <button id="syncsendbtn" class="syncbtn" onclick="syncPush()">⬆ Push drawing now</button>
+    <button id="syncdiscbtn" class="syncbtn" onclick="syncDisconnect()">Disconnect</button>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      <input type="checkbox" id="syncauto" checked style="cursor:pointer">
+      <label for="syncauto" style="font-size:10px;color:#5F5E5A;cursor:pointer">Auto-sync on every change</label>
+    </div>
+    <div id="synclog"></div>
+  </div>
+</div>
+
+</div>
+<div id="wire-hint">Click another pin to connect — Esc to cancel</div>
+<script>
+'use strict';
+// STATE
+let shapes=[], sel=null, tool='select', color='#2C2C2A', strokeW=2, useFill=false;
+let unit='px', gridPx=20, snapOn=true, gridOn=true;
+let vx=60, vy=60, vs=1;
+let undos=[], redos=[], lastUndo=0;
+let dwgList=[], atts=[], dwgNote='';
+let isDown=false, mbtn=-1, spaceDown=false;
+let drag=null, panStart=null, creating=null, textEditId=null;
+let stampSym=null;
+let pinSel=-1;
+let wirePull=null; // pending connection {fromId, fromPinIdx}
+let wires=[]; // [{id,fromId,fromPinIdx,toId,toPinIdx,color,label}]
+const PIN_COLORS={power:'#E24B4A',signal:'#1D9E75',ground:'#444441',data:'#185FA5',nc:'#BA7517',no:'#1D9E75',com:'#D85A30',clk:'#7F77DD',pwm:'#D4537E',uart:'#378ADD',i2c:'#5DCAA5',adc:'#EF9F27'};
+const PIN_TYPES=['power','signal','ground','data','nc','no','com','clk','pwm','uart','i2c','adc'];
+const SSG_NAMES=new Set(['Mega 2560','Uno R3','ESP32','DROK Buck','PWM Ctrl','8ch Relay','BASH Amp','48V PSU','Motor M','Generator G','Hall RPM','Banana Port','ACS758','ZMPT101B']);
+function pinWireColor(type){return PIN_COLORS[type]||'#888780';}
+const COLORS=['#2C2C2A','#E24B4A','#1D9E75','#185FA5','#7F77DD','#BA7517','#D85A30','#D4537E','#888780','#ffffff'];
+const PX={px:1,mm:3.7795,in:96};
+const US={px:1,mm:1/3.7795,in:1/96};
+function tou(v){return(v*US[unit]).toFixed(unit==='px'?0:2)}
+function sid(){return Date.now()+Math.floor(Math.random()*99999)}
+
+// CANVAS
+const wrap=document.getElementById('cwrap');
+const cvs=document.getElementById('cvs');
+const ctx=cvs.getContext('2d');
+const tbox=document.getElementById('tbox');
+
+function resizeCvs(){
+  const r=wrap.getBoundingClientRect();
+  cvs.width=Math.max(200,r.width); cvs.height=Math.max(100,r.height);
+  render();
+}
+
+// VIEWPORT
+function s2w(sx,sy){return{x:(sx-vx)/vs,y:(sy-vy)/vs}}
+function w2s(wx,wy){return{x:wx*vs+vx,y:wy*vs+vy}}
+function doZoom(f,cx,cy){
+  cx=cx??cvs.width/2; cy=cy??cvs.height/2;
+  const p=vs; vs=Math.max(0.04,Math.min(30,vs*f));
+  vx=cx-(cx-vx)*(vs/p); vy=cy-(cy-vy)*(vs/p);
+  setZL(); render();
+}
+function setZL(){const z=Math.round(vs*100)+'%';document.getElementById('zlbl').textContent=z;}
+function fitView(){
+  if(!shapes.length){vx=60;vy=60;vs=1;setZL();render();return;}
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+  shapes.forEach(s=>{const b=bbox(s);mnx=Math.min(mnx,b.x);mny=Math.min(mny,b.y);mxx=Math.max(mxx,b.x+b.w);mxy=Math.max(mxy,b.y+b.h);});
+  const pw=cvs.width-100,ph=cvs.height-100,fw=mxx-mnx||400,fh=mxy-mny||400;
+  vs=Math.min(pw/fw,ph/fh,4);
+  vx=(cvs.width-fw*vs)/2-mnx*vs; vy=(cvs.height-fh*vs)/2-mny*vs;
+  setZL(); render();
+}
+function snp(v){return snapOn?Math.round(v/gridPx)*gridPx:v}
+
+// BBOX
+function bbox(s){
+  if(['line','arrow','darrow','dim'].includes(s.type)){
+    const x=Math.min(s.x,s.x2??s.x),y=Math.min(s.y,s.y2??s.y);
+    return{x,y,w:Math.max(Math.abs((s.x2??s.x)-s.x),4),h:Math.max(Math.abs((s.y2??s.y)-s.y),4)};
+  }
+  if(s.type==='circle') return{x:s.x-Math.abs(s.w)/2,y:s.y-Math.abs(s.h)/2,w:Math.abs(s.w)||10,h:Math.abs(s.h)||10};
+  return{x:s.x,y:s.y,w:Math.abs(s.w)||60,h:Math.abs(s.h)||40};
+}
+
+// GRID
+function drawGrid(){
+  if(!gridOn) return;
+  const step=gridPx*vs; if(step<3) return;
+  const offX=((vx%step)+step)%step, offY=((vy%step)+step)%step;
+  ctx.strokeStyle='#DEDAD5'; ctx.lineWidth=0.5;
+  for(let x=offX;x<cvs.width;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cvs.height);ctx.stroke();}
+  for(let y=offY;y<cvs.height;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cvs.width,y);ctx.stroke();}
+  if(step>10){
+    const s5=step*5,ox5=((vx%s5)+s5)%s5,oy5=((vy%s5)+s5)%s5;
+    ctx.strokeStyle='#C8C4BD';
+    for(let x=ox5;x<cvs.width;x+=s5){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cvs.height);ctx.stroke();}
+    for(let y=oy5;y<cvs.height;y+=s5){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cvs.width,y);ctx.stroke();}
+  }
+  const o=w2s(0,0);
+  ctx.strokeStyle='rgba(29,158,117,.35)'; ctx.setLineDash([4,4]); ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(o.x,0);ctx.lineTo(o.x,cvs.height);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,o.y);ctx.lineTo(cvs.width,o.y);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ARROW HELPER
+function arrHead(ax,ay,bx,by,c,sw2,both){
+  const ang=Math.atan2(by-ay,bx-ax),h=10/vs;
+  ctx.fillStyle=c; ctx.strokeStyle=c; ctx.lineWidth=sw2;
+  ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-h*Math.cos(ang-.4),by-h*Math.sin(ang-.4));ctx.lineTo(bx-h*Math.cos(ang+.4),by-h*Math.sin(ang+.4));ctx.closePath();ctx.fill();
+  if(both){ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax+h*Math.cos(ang-.4+Math.PI),ay+h*Math.sin(ang-.4+Math.PI));ctx.lineTo(ax+h*Math.cos(ang+.4+Math.PI),ay+h*Math.sin(ang+.4+Math.PI));ctx.closePath();ctx.fill();}
+}
+
+function dimLbl(x,y,t){
+  ctx.save();ctx.fillStyle='#88888899';ctx.font=(10/vs)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,x,y);ctx.restore();
+}
+
+// DRAW SHAPE
+function drawShape(s){
+  ctx.save();
+  const sc=s.color||color, sw2=s.strokeW||strokeW, sf=s.fill||null;
+  ctx.strokeStyle=sc; ctx.lineWidth=sw2; ctx.lineCap='round'; ctx.lineJoin='round';
+
+  if(s.type==='svg_sym'){
+    const b=bbox(s);
+    if(s._img){try{ctx.drawImage(s._img,b.x,b.y,b.w,b.h);}catch(e){}}
+    else if(s.svgStr){
+      const full='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+s.w+' '+s.h+'">'+s.svgStr+'</svg>';
+      const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(full);
+      const img=new Image(); img.onload=()=>{s._img=img;render();}; img.src=url;
+      ctx.strokeStyle='#B4B2A9';ctx.lineWidth=0.5;ctx.setLineDash([3/vs,3/vs]);ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.setLineDash([]);
+    }
+    if(sel===s.id){ctx.strokeStyle='#1D9E7580';ctx.lineWidth=1/vs;ctx.setLineDash([4/vs,3/vs]);ctx.strokeRect(b.x-2/vs,b.y-2/vs,b.w+4/vs,b.h+4/vs);ctx.setLineDash([]);}
+    // Draw pins
+    if(s.pins&&s.pins.length){
+      s.pins.forEach((p,pi)=>{
+        const px=b.x+p.rx*b.w, py=b.y+p.ry*b.h;
+        const isSelPin=(sel===s.id&&pinSel===pi);
+        ctx.beginPath();ctx.arc(px,py,4/vs,0,Math.PI*2);
+        ctx.fillStyle=PIN_COLORS[p.type]||'#888';ctx.fill();
+        ctx.strokeStyle=isSelPin?'#fff':'rgba(255,255,255,0.8)';ctx.lineWidth=1.5/vs;ctx.stroke();
+        if(sel===s.id){
+          ctx.fillStyle='rgba(0,0,0,0.55)';ctx.font=(8/vs)+'px system-ui';ctx.textAlign='center';
+          ctx.fillText(p.name,px,py-5/vs);ctx.textAlign='left';
+        }
+      });
+    }
+    ctx.restore(); return;
+  }
+
+  if(s.type==='rect'){
+    ctx.beginPath();ctx.rect(s.x,s.y,s.w,s.h);if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+    if(sel===s.id) dimLbl(s.x+s.w/2,s.y-7/vs,tou(Math.abs(s.w))+'x'+tou(Math.abs(s.h))+' '+unit);
+  } else if(s.type==='rrect'){
+    const r2=Math.min(Math.abs(s.w),Math.abs(s.h))*0.15;
+    const rx=s.w<0?s.x+s.w:s.x, ry=s.h<0?s.y+s.h:s.y, rw=Math.abs(s.w), rh=Math.abs(s.h);
+    ctx.beginPath(); ctx.roundRect(rx,ry,rw,rh,r2); if(sf){ctx.fillStyle=sf;ctx.fill();} ctx.stroke();
+  } else if(s.type==='circle'){
+    ctx.beginPath();ctx.ellipse(s.x,s.y,Math.abs(s.w/2)||5,Math.abs(s.h/2)||5,0,0,Math.PI*2);if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+  } else if(s.type==='tri'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w),rh=Math.abs(s.h);
+    ctx.beginPath();ctx.moveTo(rx+rw/2,ry);ctx.lineTo(rx+rw,ry+rh);ctx.lineTo(rx,ry+rh);ctx.closePath();if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+  } else if(s.type==='diamond'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w),rh=Math.abs(s.h);
+    ctx.beginPath();ctx.moveTo(rx+rw/2,ry);ctx.lineTo(rx+rw,ry+rh/2);ctx.lineTo(rx+rw/2,ry+rh);ctx.lineTo(rx,ry+rh/2);ctx.closePath();if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+  } else if(s.type==='hex'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w),rh=Math.abs(s.h);
+    const cx2=rx+rw/2,cy2=ry+rh/2,rm=Math.min(rw,rh)/2;
+    ctx.beginPath();for(let i=0;i<6;i++){const a=Math.PI/180*(60*i-30);ctx.lineTo(cx2+rm*Math.cos(a),cy2+rm*Math.sin(a));}ctx.closePath();if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+  } else if(s.type==='para'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w),rh=Math.abs(s.h),sk=rw*0.2;
+    ctx.beginPath();ctx.moveTo(rx+sk,ry);ctx.lineTo(rx+rw,ry);ctx.lineTo(rx+rw-sk,ry+rh);ctx.lineTo(rx,ry+rh);ctx.closePath();if(sf){ctx.fillStyle=sf;ctx.fill();}ctx.stroke();
+  } else if(s.type==='cyl'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w),rh=Math.abs(s.h),ey=rh*0.15;
+    if(sf){ctx.fillStyle=sf;ctx.beginPath();ctx.moveTo(rx,ry+ey);ctx.lineTo(rx,ry+rh-ey);ctx.bezierCurveTo(rx,ry+rh+ey,rx+rw,ry+rh+ey,rx+rw,ry+rh-ey);ctx.lineTo(rx+rw,ry+ey);ctx.bezierCurveTo(rx+rw,ry-ey,rx,ry-ey,rx,ry+ey);ctx.fill();}
+    ctx.beginPath();ctx.moveTo(rx,ry+ey);ctx.lineTo(rx,ry+rh-ey);ctx.bezierCurveTo(rx,ry+rh+ey,rx+rw,ry+rh+ey,rx+rw,ry+rh-ey);ctx.lineTo(rx+rw,ry+ey);ctx.stroke();
+    ctx.beginPath();ctx.ellipse(rx+rw/2,ry+ey,rw/2,ey,0,0,Math.PI*2);ctx.stroke();
+  } else if(s.type==='line'){
+    ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x2,s.y2);ctx.stroke();
+    if(sel===s.id) dimLbl((s.x+s.x2)/2,(s.y+s.y2)/2-8/vs,tou(Math.hypot(s.x2-s.x,s.y2-s.y))+' '+unit);
+  } else if(s.type==='arrow'){
+    ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x2,s.y2);ctx.stroke();arrHead(s.x,s.y,s.x2,s.y2,sc,sw2,false);
+  } else if(s.type==='darrow'){
+    ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x2,s.y2);ctx.stroke();arrHead(s.x,s.y,s.x2,s.y2,sc,sw2,true);
+  } else if(s.type==='dim'){
+    const ax=s.x,ay=s.y,bx=s.x2,by=s.y2;
+    const ang=Math.atan2(by-ay,bx-ax),perp=ang+Math.PI/2,off=15/vs;
+    const ax2=ax+Math.cos(perp)*off,ay2=ay+Math.sin(perp)*off,bx2=bx+Math.cos(perp)*off,by2=by+Math.sin(perp)*off;
+    ctx.beginPath();ctx.moveTo(ax2,ay2);ctx.lineTo(bx2,by2);ctx.stroke();arrHead(ax2,ay2,bx2,by2,sc,sw2,true);
+    ctx.setLineDash([3/vs,3/vs]);
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax+Math.cos(perp)*off*1.3,ay+Math.sin(perp)*off*1.3);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+Math.cos(perp)*off*1.3,by+Math.sin(perp)*off*1.3);ctx.stroke();
+    ctx.setLineDash([]);
+    dimLbl((ax2+bx2)/2,(ay2+by2)/2-6/vs,tou(Math.hypot(bx-ax,by-ay))+' '+unit);
+  } else if(s.type==='text'){
+    ctx.fillStyle=sc; ctx.font=(s.fontSize||14)+'px system-ui,sans-serif'; ctx.textBaseline='top';
+    const lines=(s.text||'Label').split('\n');
+    lines.forEach((l,i)=>ctx.fillText(l,s.x,s.y+i*(s.fontSize||14)*1.3));
+    if(sel===s.id){
+      const mw=Math.max(...lines.map(l=>ctx.measureText(l).width));
+      const mh=lines.length*(s.fontSize||14)*1.3;
+      ctx.strokeStyle='#1D9E7580';ctx.lineWidth=0.5/vs;ctx.setLineDash([3/vs,3/vs]);
+      ctx.strokeRect(s.x-3/vs,s.y-2/vs,mw+6/vs,mh+4/vs);ctx.setLineDash([]);
+    }
+  } else if(s.type==='note'){
+    const rw=Math.abs(s.w)||120,rh=Math.abs(s.h)||80,fw=Math.min(14/vs,rw/4),fh=Math.min(14/vs,rh/4);
+    ctx.fillStyle=s.fill||'#FAEEDA';ctx.beginPath();ctx.rect(s.x,s.y,rw,rh);ctx.fill();
+    ctx.strokeStyle=s.color||'#BA7517';ctx.stroke();
+    ctx.fillStyle='rgba(186,117,23,.25)';ctx.beginPath();ctx.moveTo(s.x+rw-fw,s.y);ctx.lineTo(s.x+rw,s.y+fh);ctx.lineTo(s.x+rw-fw,s.y+fh);ctx.closePath();ctx.fill();
+    if(s.text){
+      ctx.fillStyle='#412402';ctx.font='12px system-ui';ctx.textBaseline='top';
+      const pad=8/vs,lh=15/vs,mw=rw-pad*2;
+      let line='',ls=[],ws=(s.text||'').split(' ');
+      ws.forEach(w=>{const t=line+w+' ';if(ctx.measureText(t).width>mw&&line){ls.push(line.trim());line=w+' ';}else line=t;});
+      if(line)ls.push(line.trim());
+      ls.forEach((l,i)=>ctx.fillText(l,s.x+pad,s.y+pad+i*lh));
+    }
+  } else if(s.type==='label'){
+    const rx=s.w<0?s.x+s.w:s.x,ry=s.h<0?s.y+s.h:s.y,rw=Math.abs(s.w)||100,rh=Math.abs(s.h)||28;
+    if(sf){ctx.fillStyle=sf;ctx.fillRect(rx,ry,rw,rh);}
+    ctx.strokeRect(rx,ry,rw,rh);
+    if(s.text){ctx.fillStyle=sc;ctx.font=(s.fontSize||11)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.text,rx+rw/2,ry+rh/2);ctx.textAlign='left';}
+  } else if(s.type==='image'&&s.imgEl){
+    try{ctx.drawImage(s.imgEl,s.x,s.y,s.w,s.h);}catch(e){}
+    ctx.strokeStyle='#D3D1C7';ctx.lineWidth=0.5;ctx.strokeRect(s.x,s.y,s.w,s.h);
+  }
+
+  ctx.restore();
+}
+
+// HANDLES
+function getHandles(s){
+  if(['line','arrow','darrow','dim'].includes(s.type)) return [{id:'p1',x:s.x,y:s.y},{id:'p2',x:s.x2,y:s.y2}];
+  const b=bbox(s);
+  return[{id:'nw',x:b.x,y:b.y},{id:'n',x:b.x+b.w/2,y:b.y},{id:'ne',x:b.x+b.w,y:b.y},
+    {id:'e',x:b.x+b.w,y:b.y+b.h/2},{id:'se',x:b.x+b.w,y:b.y+b.h},
+    {id:'s',x:b.x+b.w/2,y:b.y+b.h},{id:'sw',x:b.x,y:b.y+b.h},{id:'w',x:b.x,y:b.y+b.h/2}];
+}
+function drawHandles(s){
+  const h=5/vs,b=bbox(s);
+  ctx.strokeStyle='#1D9E7580';ctx.lineWidth=1/vs;ctx.setLineDash([4/vs,3/vs]);
+  ctx.strokeRect(b.x-2/vs,b.y-2/vs,b.w+4/vs,b.h+4/vs);ctx.setLineDash([]);
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=1.5/vs;ctx.fillStyle='#fff';
+  getHandles(s).forEach(hd=>{ctx.beginPath();ctx.rect(hd.x-h,hd.y-h,h*2,h*2);ctx.fill();ctx.stroke();});
+}
+function hitHandle(s,wx,wy){const t=8/vs;return getHandles(s).find(h=>Math.abs(h.x-wx)<t&&Math.abs(h.y-wy)<t)||null;}
+
+// HIT
+function hitShape(s,wx,wy){
+  const t=Math.max(6/vs,3);
+  if(['rect','rrect','note','label','image','tri','diamond','hex','para','cyl','svg_sym'].includes(s.type)){const b=bbox(s);return wx>=b.x-t&&wx<=b.x+b.w+t&&wy>=b.y-t&&wy<=b.y+b.h+t;}
+  if(s.type==='circle'){const rx=Math.abs(s.w/2)||5,ry=Math.abs(s.h/2)||5;return((wx-s.x)/rx)**2+((wy-s.y)/ry)**2<=1.4;}
+  if(['line','arrow','darrow','dim'].includes(s.type)){
+    const dx=s.x2-s.x,dy=s.y2-s.y,l2=dx*dx+dy*dy;
+    if(l2===0)return Math.hypot(wx-s.x,wy-s.y)<t;
+    const tt=Math.max(0,Math.min(1,((wx-s.x)*dx+(wy-s.y)*dy)/l2));
+    return Math.hypot(wx-s.x-tt*dx,wy-s.y-tt*dy)<t+3/vs;
+  }
+  if(s.type==='text'){ctx.font=(s.fontSize||14)+'px system-ui';const tw=ctx.measureText(s.text||'').width;return wx>=s.x-t&&wx<=s.x+tw+t&&wy>=s.y-t&&wy<=s.y+(s.fontSize||14)+t;}
+  return false;
+}
+function findShape(wx,wy){for(let i=shapes.length-1;i>=0;i--){if(hitShape(shapes[i],wx,wy))return shapes[i];}return null;}
+
+// RENDER
+
+// WIRE SYSTEM
+function hitWire(wx,wy){
+  const t=6/vs;
+  return wires.find(w=>{
+    const a=getPinPos(w.fromId,w.fromPinIdx);
+    const b2=getPinPos(w.toId,w.toPinIdx);
+    if(!a||!b2)return false;
+    const mx=(a.x+b2.x)/2;
+    // Check 3 segments: horizontal, vertical jog, horizontal
+    const segs=[[a.x,a.y,mx,a.y],[mx,a.y,mx,b2.y],[mx,b2.y,b2.x,b2.y]];
+    return segs.some(([x1,y1,x2,y2])=>{
+      const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy;
+      if(l2===0)return Math.hypot(wx-x1,wy-y1)<t;
+      const tt=Math.max(0,Math.min(1,((wx-x1)*dx+(wy-y1)*dy)/l2));
+      return Math.hypot(wx-x1-tt*dx,wy-y1-tt*dy)<t;
+    });
+  })||null;
+}
+function delWire(id){wires=wires.filter(w=>w.id!==id);}
+function cancelWire(){wirePull=null;document.getElementById('wire-hint').style.display='none';render();}
+function getShapeWires(shapeId){return wires.filter(w=>w.fromId===shapeId||w.toId===shapeId);}
+
+function getPinPos(shapeId,pinIdx){
+  const s=shapes.find(x=>x.id===shapeId);if(!s||!s.pins)return null;
+  const p=s.pins[pinIdx];if(!p)return null;
+  const b=bbox(s);return{x:b.x+p.rx*b.w,y:b.y+p.ry*b.h,type:p.type,name:p.name};
+}
+function drawWires(){
+  wires.forEach(w=>{
+    const a=getPinPos(w.fromId,w.fromPinIdx);
+    const b2=getPinPos(w.toId,w.toPinIdx);
+    if(!a||!b2)return;
+    const isSelWire=sel===w.id;
+    const wc=w.color||PIN_COLORS[a.type]||'#2C2C2A';
+    // Draw orthogonal wire with corner
+    const mx=(a.x+b2.x)/2;
+    ctx.strokeStyle=isSelWire?'#185FA5':wc;
+    ctx.lineWidth=(isSelWire?2.5:1.8)/vs;
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.lineTo(mx,a.y);
+    ctx.lineTo(mx,b2.y);
+    ctx.lineTo(b2.x,b2.y);
+    ctx.stroke();
+    // Dots at endpoints
+    ctx.fillStyle=wc;
+    ctx.beginPath();ctx.arc(a.x,a.y,2.5/vs,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(b2.x,b2.y,2.5/vs,0,Math.PI*2);ctx.fill();
+    // Label midpoint
+    if(w.label){
+      const lx=mx,ly=(a.y+b2.y)/2;
+      ctx.fillStyle='rgba(255,255,255,0.85)';
+      ctx.font=10/vs+'px system-ui';
+      const tw=ctx.measureText(w.label).width;
+      ctx.fillRect(lx-tw/2-2/vs,ly-6/vs,tw+4/vs,10/vs);
+      ctx.fillStyle=wc;ctx.textAlign='center';ctx.fillText(w.label,lx,ly+3/vs);ctx.textAlign='left';
+    }
+    // Select indicator
+    if(isSelWire){
+      ctx.strokeStyle='rgba(24,95,165,0.3)';ctx.lineWidth=8/vs;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(mx,a.y);ctx.lineTo(mx,b2.y);ctx.lineTo(b2.x,b2.y);ctx.stroke();
+    }
+  });
+  // Wire preview while connecting
+  if(wirePull&&wirePull.mx!==undefined){
+    const a=getPinPos(wirePull.fromId,wirePull.fromPinIdx);
+    if(a){
+      const wc=PIN_COLORS[a.type]||'#1D9E75';
+      ctx.strokeStyle=wc;ctx.lineWidth=1.5/vs;ctx.setLineDash([5/vs,4/vs]);
+      ctx.beginPath();
+      ctx.moveTo(a.x,a.y);
+      ctx.lineTo(wirePull.mx,a.y);
+      ctx.lineTo(wirePull.mx,wirePull.my);
+      ctx.lineTo(wirePull.tx,wirePull.my);
+      ctx.lineTo(wirePull.tx,wirePull.ty);
+      ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+}
+function render(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.fillStyle='#ECEAE6';ctx.fillRect(0,0,cvs.width,cvs.height);
+  drawGrid();
+  ctx.save();ctx.translate(vx,vy);ctx.scale(vs,vs);
+  drawWires();
+  shapes.forEach(s=>drawShape(s));
+  if(creating) drawShape(creating);
+  if(sel){const s=shapes.find(x=>x.id===sel);if(s&&s.type!=='svg_sym')drawHandles(s);else if(s&&s.type==='svg_sym')drawHandles(s);}
+  ctx.restore();
+  updateInspector();
+}
+
+// UNDO
+function saveU(){undos.push(JSON.parse(JSON.stringify(shapes.map(s=>{const{imgEl,_img,...r}=s;return r;}))));if(undos.length>50)undos.shift();redos=[];}
+function saveUT(){const n=Date.now();if(n-lastUndo>500){saveU();lastUndo=n;}}
+function doUndo(){if(!undos.length)return;redos.push({sh:JSON.parse(JSON.stringify(shapes.map(s=>{const{imgEl,_img,...r}=s;return r;}))),wi:JSON.parse(JSON.stringify(wires))});const u=undos.pop();shapes=u.sh;wires=u.wi||[];sel=null;render();}
+function doRedo(){if(!redos.length)return;undos.push({sh:JSON.parse(JSON.stringify(shapes.map(s=>{const{imgEl,_img,...r}=s;return r;}))),wi:JSON.parse(JSON.stringify(wires))});const r2=redos.pop();shapes=r2.sh;wires=r2.wi||[];render();}
+
+// TOOLS
+function setTool(t){
+  tool=t; stampSym=null;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  const el=document.getElementById('t-'+t); if(el) el.classList.add('on');
+  wrap.style.cursor=t==='select'?'default':'crosshair';
+  if(textEditId) commitText();
+}
+function setColor(c){color=c;document.querySelectorAll('.cdot').forEach(x=>x.classList.remove('on'));if(sel){saveU();const s=shapes.find(x=>x.id===sel);if(s){s.color=c;render();}}}
+function toggleFill(){useFill=!useFill;const b=document.getElementById('ftog');b.textContent=useFill?'Fill on':'No fill';b.classList.toggle('on',useFill);}
+function toggleGrid(){gridOn=!gridOn;document.getElementById('gbtn').classList.toggle('on',gridOn);render();}
+function toggleSnap(){snapOn=!snapOn;document.getElementById('sbtn').classList.toggle('on',snapOn);}
+function delSelected(){if(!sel)return;saveU();wires=wires.filter(w=>w.fromId!==sel&&w.toId!==sel);shapes=shapes.filter(s=>s.id!==sel);sel=null;render();}
+
+// MOUSE
+function getCM(e){const r=cvs.getBoundingClientRect();return{sx:e.clientX-r.left,sy:e.clientY-r.top,...s2w(e.clientX-r.left,e.clientY-r.top)};}
+
+cvs.addEventListener('wheel',e=>{e.preventDefault();const r=cvs.getBoundingClientRect();doZoom(e.deltaY<0?1.1:0.9,e.clientX-r.left,e.clientY-r.top);},{passive:false});
+
+cvs.addEventListener('mousedown',e=>{
+  isDown=true; mbtn=e.button;
+  const p=getCM(e);
+  // Pin click detection — ALL svg_sym shapes, not just selected
+  if(tool==='select'){
+    const PIN_HIT=10/vs;
+    let hitPin=null,hitShape2=null,hitPinIdx=-1;
+    for(let si=shapes.length-1;si>=0;si--){
+      const ss=shapes[si];
+      if(ss.type!=='svg_sym'||!ss.pins||!ss.pins.length)continue;
+      const b=bbox(ss);
+      for(let pi=0;pi<ss.pins.length;pi++){
+        const pp=ss.pins[pi];
+        const px=b.x+pp.rx*b.w,py2=b.y+pp.ry*b.h;
+        if(Math.abs(p.x-px)<PIN_HIT&&Math.abs(p.y-py2)<PIN_HIT){
+          hitPin=pp;hitShape2=ss;hitPinIdx=pi;break;
+        }
+      }
+      if(hitPin)break;
+    }
+    if(hitPin){
+      if(wirePull){
+        // Second click — complete connection
+        if(hitShape2.id!==wirePull.fromId||hitPinIdx!==wirePull.fromPinIdx){
+          // Check not duplicate
+          const dup=wires.find(w=>(w.fromId===wirePull.fromId&&w.fromPinIdx===wirePull.fromPinIdx&&w.toId===hitShape2.id&&w.toPinIdx===hitPinIdx)||(w.toId===wirePull.fromId&&w.toPinIdx===wirePull.fromPinIdx&&w.fromId===hitShape2.id&&w.fromPinIdx===hitPinIdx));
+          if(!dup){
+            saveU();
+            const fromS=shapes.find(x=>x.id===wirePull.fromId);
+            const fromPin=fromS?fromS.pins[wirePull.fromPinIdx]:null;
+            const wColor=PIN_COLORS[fromPin?fromPin.type:'signal']||'#2C2C2A';
+            wires.push({id:'w'+sid(),fromId:wirePull.fromId,fromPinIdx:wirePull.fromPinIdx,toId:hitShape2.id,toPinIdx:hitPinIdx,color:wColor,label:''});
+          }
+        }
+        wirePull=null;
+        document.getElementById('wire-hint').style.display='none';
+        sel=hitShape2.id;pinSel=hitPinIdx;render();return;
+      } else {
+        // First click — start connection
+        wirePull={fromId:hitShape2.id,fromPinIdx:hitPinIdx,tx:p.x,ty:p.y,mx:(p.x+p.x)/2,my:p.y};
+        sel=hitShape2.id;pinSel=hitPinIdx;
+        document.getElementById('wire-hint').style.display='block';
+        render();return;
+      }
+    }
+    // Click on wire to select it
+    const wireHit=hitWire(p.x,p.y);
+    if(wireHit){sel=wireHit.id;pinSel=-1;wirePull=null;document.getElementById('wire-hint').style.display='none';render();return;}
+  }
+  // Stamp tool
+  if(tool==='stamp'&&stampSym){
+    const sw2=stampSym.w||48,sh=stampSym.h||32;
+    const ns={id:sid(),type:'svg_sym',x:snp(p.x-sw2/2),y:snp(p.y-sh/2),w:sw2,h:sh,svgStr:stampSym.svg,color:'#2C2C2A',strokeW:1.5,fill:null,text:stampSym.name,symName:stampSym.name,fontSize:10,pins:JSON.parse(JSON.stringify(stampSym.pins||[]))};
+    saveU();shapes.push(ns);sel=ns.id;render();showMsg(stampSym.name+' placed');
+    if(!e.shiftKey){stampSym=null;setTool('select');}
+    return;
+  }
+  if(e.button===1||spaceDown){panStart={mx:p.sx,my:p.sy,vx,vy};return;}
+  if(tool==='select'){
+    if(sel){const s=shapes.find(x=>x.id===sel);if(s){const h=hitHandle(s,p.x,p.y);if(h){drag={mode:'resize',shapeId:sel,handle:h.id};return;}}}
+    const hit=findShape(p.x,p.y);
+    if(hit){sel=hit.id;pinSel=-1;drag={mode:'move',shapeId:hit.id,ox:p.x-hit.x,oy:p.y-hit.y,ox2:p.x-(hit.x2||0),oy2:p.y-(hit.y2||0)};}
+    else{sel=null;pinSel=-1;}
+    render(); return;
+  }
+  const wx=snp(p.x),wy=snp(p.y);
+  if(tool==='text'){
+    const ns={id:sid(),type:'text',x:wx,y:wy,text:'',color,strokeW,fontSize:14};
+    saveU();shapes.push(ns);sel=ns.id;startTE(ns);render();return;
+  }
+  const isL=['line','arrow','darrow','dim'].includes(tool);
+  const base={id:'preview',color,strokeW,fill:useFill?document.getElementById('fpick').value:null};
+  if(isL) creating={...base,type:tool,x:wx,y:wy,x2:wx,y2:wy};
+  else if(tool==='circle') creating={...base,type:'circle',x:wx,y:wy,w:0,h:0};
+  else creating={...base,type:tool,x:wx,y:wy,w:0,h:0};
+});
+
+cvs.addEventListener('mousemove',e=>{
+  const p=getCM(e);
+  document.getElementById('sbpos').textContent=tou(p.x)+', '+tou(p.y)+' '+unit;
+  if(panStart){vx=panStart.vx+(p.sx-panStart.mx);vy=panStart.vy+(p.sy-panStart.my);render();return;}
+  if(!isDown) return;
+  if(wirePull){
+    wirePull.tx=p.x;wirePull.ty=p.y;
+    const a=getPinPos(wirePull.fromId,wirePull.fromPinIdx);
+    if(a)wirePull.mx=(a.x+p.x)/2;wirePull.my=(a.y+p.y)/2;
+    render();return;
+  }
+  if(drag){
+    saveUT();
+    const s=shapes.find(x=>x.id===drag.shapeId); if(!s) return;
+    if(drag.mode==='move'){
+      const nx=snp(p.x-drag.ox),ny=snp(p.y-drag.oy);
+      if(s.x2!==undefined){s.x2+=nx-s.x;s.y2+=ny-s.y;}
+      s.x=nx;s.y=ny;
+    } else applyResize(s,drag.handle,p.x,p.y);
+    render(); return;
+  }
+  if(creating){
+    const wx=snp(p.x),wy=snp(p.y);
+    if(['line','arrow','darrow','dim'].includes(creating.type)){creating.x2=wx;creating.y2=wy;}
+    else if(creating.type==='circle'){const r=Math.hypot(wx-creating.x,wy-creating.y);creating.w=r*2;creating.h=r*2;}
+    else{creating.w=wx-creating.x;creating.h=wy-creating.y;}
+    render();
+    const b=bbox(creating);document.getElementById('sbsel').textContent=tou(Math.abs(b.w))+'x'+tou(Math.abs(b.h))+' '+unit;
+  }
+});
+
+cvs.addEventListener('mouseup',e=>{
+  isDown=false;drag=null;panStart=null;mbtn=-1;
+// wire completion handled in mousedown (click-to-connect)
+  if(creating&&creating.id==='preview'){
+    const s={...creating,id:sid()};
+    const b=bbox(s);
+    if(b.w>3||b.h>3){
+      saveU();
+      if(!['line','arrow','darrow','dim'].includes(s.type)&&s.type!=='circle'){
+        if(s.w<0){s.x+=s.w;s.w=-s.w;} if(s.h<0){s.y+=s.h;s.h=-s.h;}
+      }
+      shapes.push(s);sel=s.id;
+      if(s.type==='note'||s.type==='label') startTE(s);
+    }
+    creating=null;document.getElementById('sbsel').textContent='';render();
+  }
+});
+
+cvs.addEventListener('dblclick',e=>{
+  const p=getCM(e);const hit=findShape(p.x,p.y);
+  if(hit&&['text','note','label'].includes(hit.type)){sel=hit.id;startTE(hit);}
+});
+
+// RESIZE
+function applyResize(s,handle,wx,wy){
+  const nx=snp(wx),ny=snp(wy);
+  if(['line','arrow','darrow','dim'].includes(s.type)){if(handle==='p1'){s.x=nx;s.y=ny;}else{s.x2=nx;s.y2=ny;}return;}
+  if(s.type==='circle'){const r=Math.max(Math.abs(nx-s.x),Math.abs(ny-s.y));s.w=r*2;s.h=r*2;return;}
+  const ox=s.x,oy=s.y,ow=s.w,oh=s.h;
+  if(handle.includes('e')) s.w=nx-s.x;
+  if(handle.includes('s')) s.h=ny-s.y;
+  if(handle.includes('w')){s.w=ox+ow-nx;s.x=nx;}
+  if(handle.includes('n')){s.h=oy+oh-ny;s.y=ny;}
+}
+
+// TEXT EDIT
+function startTE(s){
+  textEditId=s.id;
+  const sp=w2s(s.x,s.y);
+  tbox.style.display='block';tbox.style.left=sp.x+'px';tbox.style.top=sp.y+'px';
+  tbox.style.fontSize=(s.fontSize||14)*vs+'px';tbox.style.color=s.color||color;
+  tbox.style.width=Math.max(120,(Math.abs(s.w)||120)*vs)+'px';
+  tbox.style.height=Math.max(28,(Math.abs(s.h)||40)*vs)+'px';
+  tbox.value=s.text||'';tbox.focus();tbox.select();
+}
+function commitText(){
+  if(!textEditId) return;
+  const s=shapes.find(x=>x.id===textEditId);
+  if(s){saveU();s.text=tbox.value;}
+  tbox.style.display='none';textEditId=null;render();
+}
+tbox.addEventListener('keydown',e=>{if(e.key==='Escape')commitText();if(e.key==='Enter'&&!e.shiftKey)commitText();});
+tbox.addEventListener('blur',()=>setTimeout(commitText,120));
+
+// KEYBOARD
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key===' '){e.preventDefault();spaceDown=true;wrap.style.cursor='grab';}
+  const map={s:'select',r:'rect',c:'circle',l:'line',a:'arrow',t:'text',n:'note'};
+  if(map[e.key.toLowerCase()]) setTool(map[e.key.toLowerCase()]);
+  if(e.key==='Escape'){cancelWire();return;}
+  if((e.key==='Delete'||e.key==='Backspace')){
+    e.preventDefault();
+    // Delete selected wire or shape
+    const hw=wires.find(w=>w.id===sel);
+    if(hw){saveU();delWire(sel);sel=null;render();return;}
+    if(sel)delSelected();
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();doUndo();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();doRedo();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveDwg();}
+  if(sel&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+    e.preventDefault();const s=shapes.find(x=>x.id===sel);if(!s)return;
+    const d=e.shiftKey?gridPx:1,dx=e.key==='ArrowLeft'?-d:e.key==='ArrowRight'?d:0,dy=e.key==='ArrowUp'?-d:e.key==='ArrowDown'?d:0;
+    saveUT();s.x+=dx;s.y+=dy;if(s.x2!==undefined){s.x2+=dx;s.y2+=dy;}render();
+  }
+});
+document.addEventListener('keyup',e=>{if(e.key===' '){spaceDown=false;wrap.style.cursor=tool==='select'?'default':'crosshair';}});
+
+// INSPECTOR
+
+function buildWireInspector(w,fS,tS,fP,tP){
+  const el=document.getElementById('inosel');
+  el.style.display='block'; el.innerHTML='';
+  const title=document.createElement('div');
+  title.style.cssText='font-size:10px;font-weight:500;color:#185FA5;margin-bottom:4px';
+  title.textContent='Wire selected';el.appendChild(title);
+  const f=document.createElement('div');
+  f.style.cssText='font-size:10px;color:#2C2C2A;margin-bottom:2px';
+  f.innerHTML='From: <b>'+(fS?fS.symName||fS.text:'?')+'</b> → '+(fP?fP.name:'?');el.appendChild(f);
+  const t2=document.createElement('div');
+  t2.style.cssText='font-size:10px;color:#2C2C2A;margin-bottom:6px';
+  t2.innerHTML='To: <b>'+(tS?tS.symName||tS.text:'?')+'</b> → '+(tP?tP.name:'?');el.appendChild(t2);
+  const li=document.createElement('input');li.type='text';
+  li.placeholder='Wire label...';li.value=w.label||'';
+  li.style.cssText='width:100%;font-size:11px;padding:3px 5px;border:0.5px solid #D3D1C7;border-radius:4px;font-family:inherit;margin-bottom:5px';
+  li.oninput=()=>{const wr=wires.find(x=>x.id===w.id);if(wr)wr.label=li.value;render();};el.appendChild(li);
+  const crow=document.createElement('div');crow.style.display='flex';crow.style.alignItems='center';crow.style.gap='6px';crow.style.marginBottom='5px';
+  const ci=document.createElement('input');ci.type='color';ci.value=w.color||'#2C2C2A';
+  ci.style.cssText='width:36px;height:22px;padding:0;border:0.5px solid #D3D1C7;border-radius:4px';
+  ci.oninput=()=>{const wr=wires.find(x=>x.id===w.id);if(wr)wr.color=ci.value;render();};
+  const clbl=document.createElement('span');clbl.style.cssText='font-size:9px;color:#888';clbl.textContent='wire color';
+  crow.appendChild(ci);crow.appendChild(clbl);el.appendChild(crow);
+  const dbtn=document.createElement('button');
+  dbtn.textContent='Delete wire';
+  dbtn.style.cssText='width:100%;font-size:10px;padding:3px;border:0.5px solid #E24B4A;border-radius:4px;background:#FCEBEB;color:#A32D2D;cursor:pointer';
+  dbtn.onclick=()=>{saveU();delWire(w.id);sel=null;render();};el.appendChild(dbtn);
+}
+
+function updateInspector(){
+  const s=shapes.find(x=>x.id===sel);
+  if(!s){document.getElementById('inosel').style.display='block';document.getElementById('iprops').style.display='none';document.getElementById('itextsec').style.display='none';return;}
+  document.getElementById('inosel').style.display='none';document.getElementById('iprops').style.display='block';
+  const b=bbox(s);
+  document.getElementById('ix').value=tou(b.x);document.getElementById('iy').value=tou(b.y);
+  document.getElementById('iw').value=tou(b.w);document.getElementById('ih').value=tou(b.h);
+  document.getElementById('ifs').value=s.fontSize||14;
+  document.getElementById('ifontr').style.display=s.type==='text'?'flex':'none';
+  document.getElementById('icol').value=s.color||'#2C2C2A';
+  document.getElementById('ifill').value=s.fill||'#E1F5EE';
+  const hasTxt=['text','note','label'].includes(s.type);
+  document.getElementById('itextsec').style.display=hasTxt?'block':'none';
+  if(hasTxt)document.getElementById('itextval').value=s.text||'';
+  document.getElementById('sbsel').textContent=s.type+' '+tou(b.w)+'x'+tou(b.h)+' '+unit;
+  // Pin section
+  const pinsec=document.getElementById('pinsec');
+  const isWire=wires.find(w=>w.id===sel);
+  if(isWire){
+    // Show wire inspector instead
+    document.getElementById('inosel').style.display='none';
+    document.getElementById('iprops').style.display='none';
+    document.getElementById('itextsec').style.display='none';
+    pinsec.style.display='none';
+    // Show wire details in inosel repurposed
+    const fS=shapes.find(x=>x.id===isWire.fromId);const tS=shapes.find(x=>x.id===isWire.toId);
+    const fP=fS?fS.pins[isWire.fromPinIdx]:null;const tP=tS?tS.pins[isWire.toPinIdx]:null;
+    buildWireInspector(isWire,fS,tS,fP,tP);
+    return;
+  }
+  if(s&&s.type==='svg_sym'&&s.pins&&s.pins.length){
+    pinsec.style.display='block';
+    renderPinList(s);
+  } else {
+    pinsec.style.display='none';
+  }
+}
+function setProp(k,v){const s=shapes.find(x=>x.id===sel);if(s){saveU();s[k]=v;render();}}
+function setPropX(v){const s=shapes.find(x=>x.id===sel);if(s){saveU();const b=bbox(s);const dx=v*PX[unit]-b.x;s.x+=dx;if(s.x2!==undefined)s.x2+=dx;render();}}
+function setPropY(v){const s=shapes.find(x=>x.id===sel);if(s){saveU();const b=bbox(s);const dy=v*PX[unit]-b.y;s.y+=dy;if(s.y2!==undefined)s.y2+=dy;render();}}
+function setPropW(v){const s=shapes.find(x=>x.id===sel);if(s){saveU();s.w=v*PX[unit];render();}}
+function setPropH(v){const s=shapes.find(x=>x.id===sel);if(s){saveU();s.h=v*PX[unit];render();}}
+
+
+// PIN EDITOR
+function renderPinList(s){
+  const el=document.getElementById('pinlist');
+  const isSSG=SSG_NAMES.has(s.symName||s.text||'');
+  el.innerHTML='';
+  (s.pins||[]).forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.className='pin-row';
+    row.style.background=i===pinSel?'#E1F5EE':'';
+    row.onclick=()=>{pinSel=i;render();renderPinList(s);};
+    const dot=document.createElement('div');
+    dot.className='pin-dot';dot.style.background=PIN_COLORS[p.type]||'#888';
+    // Name input
+    const ni=document.createElement('input');ni.className='pin-name-in';ni.value=p.name;
+    ni.title='Pin name';
+    ni.onchange=()=>{saveU();p.name=ni.value;render();};
+    // Type select
+    const ts=document.createElement('select');ts.className='pin-type-sel';
+    PIN_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===p.type)o.selected=true;ts.appendChild(o);});
+    ts.onchange=()=>{saveU();p.type=ts.value;dot.style.background=PIN_COLORS[p.type]||'#888';render();};
+    // Delete button
+    const del=document.createElement('span');del.textContent='✕';del.style.cssText='color:#A32D2D;cursor:pointer;padding:1px 4px;border-radius:3px;font-size:10px';
+    del.onclick=(e)=>{e.stopPropagation();saveU();s.pins.splice(i,1);if(pinSel>=s.pins.length)pinSel=-1;render();renderPinList(s);};
+    row.appendChild(dot);row.appendChild(ni);row.appendChild(ts);row.appendChild(del);
+    el.appendChild(row);
+  });
+  // Connections per pin
+  (s.pins||[]).forEach((p,i)=>{
+    const connW=wires.filter(w=>(w.fromId===s.id&&w.fromPinIdx===i)||(w.toId===s.id&&w.toPinIdx===i));
+    if(connW.length){
+      const row2=document.createElement('div');
+      row2.style.cssText='padding:2px 0 2px 14px;font-size:9px;color:#185FA5;border-bottom:0.5px solid #F1EFE8';
+      connW.forEach(w=>{
+        const othId=w.fromId===s.id?w.toId:w.fromId;
+        const othPi=w.fromId===s.id?w.toPinIdx:w.fromPinIdx;
+        const othS=shapes.find(x=>x.id===othId);
+        const othP=othS?othS.pins[othPi]:null;
+        const badge=document.createElement('span');
+        badge.className='conn-badge';
+        badge.textContent='→ '+(othS?othS.symName||othS.text:'?')+':'+(othP?othP.name:'?');
+        badge.onclick=()=>{saveU();delWire(w.id);render();renderPinList(s);};
+        badge.title='Click to remove connection';
+        row2.appendChild(badge);
+      });
+      // insert after pin row i
+      const rows=el.querySelectorAll('.pin-row');
+      if(rows[i])rows[i].after(row2);else el.appendChild(row2);
+    }
+  });
+  // Hint
+  const hint=document.createElement('div');
+  hint.style.cssText='font-size:9px;color:#888;padding:4px 0 2px';
+  hint.textContent='Click any pin to start a wire connection';
+  el.appendChild(hint);
+}
+function addPin(){
+  const s=shapes.find(x=>x.id===sel);if(!s||s.type!=='svg_sym')return;
+  saveU();
+  if(!s.pins)s.pins=[];
+  s.pins.push({id:'p'+Date.now(),name:'Pin '+s.pins.length,rx:0.5,ry:0.5,type:'signal'});
+  pinSel=s.pins.length-1;
+  render();renderPinList(s);
+}
+
+// PALETTE
+function buildPalette(){
+  const p=document.getElementById('cpal');p.innerHTML='';
+  COLORS.forEach(c=>{
+    const d=document.createElement('div');d.className='cdot'+(c===color?' on':'');d.style.background=c;
+    if(c==='#ffffff')d.style.border='2px solid #D3D1C7';
+    d.onclick=()=>{color=c;document.getElementById('cpick').value=c;document.querySelectorAll('.cdot').forEach(x=>x.classList.remove('on'));d.classList.add('on');if(sel){saveU();const s=shapes.find(x=>x.id===sel);if(s){s.color=c;render();}}};
+    p.appendChild(d);
+  });
+}
+
+// FILE IMPORT
+function handleFile(ev){
+  Array.from(ev.target.files).forEach(f=>{
+    if(f.type==='application/pdf'){atts.push({name:f.name,type:'pdf',size:Math.round(f.size/1024)+'KB'});renderAtts();return;}
+    const fr=new FileReader();
+    fr.onload=e=>{const img=new Image();img.onload=()=>{const asp=img.width/img.height,w=Math.min(200,img.width),h=w/asp;const ns={id:sid(),type:'image',x:snp(-vx/vs+80),y:snp(-vy/vs+80),w,h,color:'#D3D1C7',strokeW:0.5,fill:null,imgEl:img,imgSrc:e.target.result};saveU();shapes.push(ns);sel=ns.id;render();};img.src=e.target.result;};
+    fr.readAsDataURL(f);
+  });ev.target.value='';
+}
+function renderAtts(){
+  document.getElementById('attlist').innerHTML=atts.map((a,i)=>'<div class="att"><span>'+(a.type==='pdf'?'📄':'🖼')+'</span><span style="flex:1;font-weight:500">'+a.name+'</span><span class="adel" onclick="atts.splice('+i+',1);renderAtts()">✕</span></div>').join('');
+}
+
+// SAVE/LOAD
+function newDwg(){if(shapes.length&&!confirm('New drawing? Unsaved changes lost.'))return;shapes=[];wires=[];sel=null;undos=[];redos=[];atts=[];dwgNote='';document.getElementById('dwgname').value='Untitled';document.getElementById('dnote').value='';vx=60;vy=60;vs=1;setZL();render();}
+
+async function saveDwg(){
+  const name=document.getElementById('dwgname').value.trim()||'Untitled';
+  const ser=shapes.map(s=>{const{imgEl,_img,...r}=s;return r;});
+  const thumb=cvs.toDataURL('image/png',0.3);
+  const entry={id:Date.now(),name,shapes:ser,wires:JSON.parse(JSON.stringify(wires)),atts,note:dwgNote,thumb,ts:new Date().toLocaleString()};
+  dwgList=dwgList.filter(d=>d.name!==name);dwgList.unshift(entry);
+  try{await window.storage.set('ssg-dwg-'+entry.id,JSON.stringify(entry));await window.storage.set('ssg-dwg-idx',JSON.stringify(dwgList.map(x=>x.id)));showMsg('Saved');}
+  catch(e){showMsg('Saved locally');}
+}
+async function loadGallery(){
+  try{const idx=await window.storage.get('ssg-dwg-idx');if(!idx){dwgList=[];return;}const ids=JSON.parse(idx.value);dwgList=[];for(const id of ids){try{const r=await window.storage.get('ssg-dwg-'+id);if(r)dwgList.push(JSON.parse(r.value));}catch(e){}}}catch(e){dwgList=[];}
+}
+function openGallery(){loadGallery().then(renderGallery);document.getElementById('galp').style.display='flex';}
+function closeGallery(){document.getElementById('galp').style.display='none';}
+function renderGallery(){
+  const el=document.getElementById('gallist');
+  if(!dwgList.length){el.innerHTML='<div style="font-size:11px;color:#888;padding:8px">No saved drawings yet.</div>';return;}
+  el.innerHTML=dwgList.map((d,i)=>'<div class="gc" onclick="loadEntry('+i+')"><img class="gt" src="'+d.thumb+'"><div class="gn">'+d.name+'</div><div class="gm">'+d.ts+'</div></div>').join('');
+}
+function loadEntry(i){
+  const d=dwgList[i];shapes=d.shapes||[];
+  shapes.forEach(s=>{if(s.type==='image'&&s.imgSrc){const img=new Image();img.src=s.imgSrc;s.imgEl=img;}});
+  atts=d.atts||[];dwgNote=d.note||'';
+  document.getElementById('dwgname').value=d.name;document.getElementById('dnote').value=dwgNote;
+  wires=d.wires||[];sel=null;undos=[];redos=[];renderAtts();closeGallery();fitView();
+}
+function exportPNG(){const a=document.createElement('a');a.download=(document.getElementById('dwgname').value||'drawing')+'.png';a.href=cvs.toDataURL();a.click();}
+function showMsg(m){document.getElementById('sbmsg').textContent=m;setTimeout(()=>document.getElementById('sbmsg').textContent='',2500);}
+
+// SYMBOL LIBRARY
+let symCategories={}, symCategory='Basic';
+
+const BUILTIN={
+  'Basic':[
+    {name:'Resistor',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="10" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><rect x="10" y="10" width="28" height="12" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="38" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Inductor',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="6" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><path d="M6,16 Q9,6 12,16 Q15,6 18,16 Q21,6 24,16 Q27,6 30,16 Q33,6 36,16 Q39,6 42,16" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="42" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Capacitor',pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="20" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="20" y1="6" x2="20" y2="26" stroke="#2C2C2A" stroke-width="2.5"/><line x1="24" y1="6" x2="24" y2="26" stroke="#2C2C2A" stroke-width="2.5"/><line x1="24" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Diode',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="14,8 14,24 30,16" fill="#2C2C2A"/><line x1="30" y1="8" x2="30" y2="24" stroke="#2C2C2A" stroke-width="2"/><line x1="30" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Zener',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="14,8 14,24 30,16" fill="#2C2C2A"/><line x1="30" y1="6" x2="36" y2="8" stroke="#2C2C2A" stroke-width="2"/><line x1="30" y1="8" x2="30" y2="24" stroke="#2C2C2A" stroke-width="2"/><line x1="24" y1="24" x2="30" y2="24" stroke="#2C2C2A" stroke-width="2"/><line x1="30" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Schottky',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "K", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="14,8 14,24 30,16" fill="#2C2C2A"/><path d="M30,8 C34,8 34,12 30,12" fill="none" stroke="#2C2C2A" stroke-width="2"/><line x1="30" y1="8" x2="30" y2="24" stroke="#2C2C2A" stroke-width="2"/><path d="M30,24 C26,24 26,20 30,20" fill="none" stroke="#2C2C2A" stroke-width="2"/><line x1="30" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Fuse',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="10" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><rect x="10" y="10" width="28" height="12" rx="4" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="38" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Ground',pins:[{"id": "p0", "name": "GND", "rx": 0.5, "ry": 0.0, "type": "ground"}],pins:[{"id": "p0", "name": "GND", "rx": 0.5, "ry": 0.0, "type": "ground"}],w:48,h:32,svg:'<line x1="24" y1="0" x2="24" y2="12" stroke="#2C2C2A" stroke-width="1.5"/><line x1="10" y1="12" x2="38" y2="12" stroke="#2C2C2A" stroke-width="2"/><line x1="15" y1="17" x2="33" y2="17" stroke="#2C2C2A" stroke-width="2"/><line x1="20" y1="22" x2="28" y2="22" stroke="#2C2C2A" stroke-width="2"/>'},
+    {name:'Earth PE',pins:[{"id": "p0", "name": "PE", "rx": 0.5, "ry": 0.0, "type": "ground"}],pins:[{"id": "p0", "name": "PE", "rx": 0.5, "ry": 0.0, "type": "ground"}],w:48,h:32,svg:'<line x1="24" y1="0" x2="24" y2="12" stroke="#2C2C2A" stroke-width="1.5"/><line x1="10" y1="12" x2="38" y2="12" stroke="#2C2C2A" stroke-width="2"/><line x1="13" y1="17" x2="35" y2="17" stroke="#2C2C2A" stroke-width="1.5"/><line x1="16" y1="22" x2="32" y2="22" stroke="#2C2C2A" stroke-width="1.5"/><line x1="20" y1="27" x2="28" y2="27" stroke="#2C2C2A" stroke-width="1.5"/>'},
+  ],
+  'Switches':[
+    {name:'SPST NO',pins:[{"id": "p0", "name": "COM", "rx": 0.0, "ry": 0.7, "type": "com"}, {"id": "p1", "name": "NO", "rx": 1.0, "ry": 0.7, "type": "no"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.7, "type": "com"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.7, "type": "no"}],w:48,h:28,svg:'<line x1="0" y1="20" x2="14" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="14" cy="20" r="2.5" fill="#2C2C2A"/><line x1="14" y1="20" x2="34" y2="9" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="34" cy="20" r="2.5" fill="#2C2C2A"/><line x1="34" y1="20" x2="48" y2="20" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'SPST NC',pins:[{"id": "p0", "name": "COM", "rx": 0.0, "ry": 0.55, "type": "com"}, {"id": "p1", "name": "NC", "rx": 1.0, "ry": 0.55, "type": "nc"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.55, "type": "com"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.55, "type": "nc"}],w:48,h:28,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="14" cy="16" r="2.5" fill="#2C2C2A"/><line x1="14" y1="16" x2="34" y2="12" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="34" cy="16" r="2.5" fill="#2C2C2A"/><line x1="34" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'SPDT',pins:[{"id": "p0", "name": "COM", "rx": 0.0, "ry": 0.5, "type": "com"}, {"id": "p1", "name": "NO", "rx": 1.0, "ry": 0.25, "type": "no"}, {"id": "p2", "name": "NC", "rx": 1.0, "ry": 0.75, "type": "nc"}],pins:[{"id": "p0", "name": "COM", "rx": 0.0, "ry": 0.5, "type": "com"}, {"id": "p1", "name": "NO", "rx": 1.0, "ry": 0.25, "type": "no"}, {"id": "p2", "name": "NC", "rx": 1.0, "ry": 0.75, "type": "nc"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="14" cy="16" r="2.5" fill="#2C2C2A"/><line x1="14" y1="16" x2="32" y2="8" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="32" cy="8" r="2.5" fill="#2C2C2A"/><line x1="32" y1="8" x2="48" y2="8" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="32" cy="24" r="2.5" fill="#2C2C2A"/><line x1="32" y1="24" x2="48" y2="24" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Push btn',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.7, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.7, "type": "signal"}],w:48,h:28,svg:'<line x1="0" y1="20" x2="14" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="14" cy="20" r="2.5" fill="#2C2C2A"/><line x1="14" y1="20" x2="34" y2="20" stroke="#2C2C2A" stroke-width="1.5" stroke-dasharray="3,2"/><circle cx="34" cy="20" r="2.5" fill="#2C2C2A"/><line x1="34" y1="20" x2="48" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><line x1="24" y1="9" x2="24" y2="17" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="9" x2="30" y2="9" stroke="#2C2C2A" stroke-width="2"/>'},
+  ],
+  'Sources':[
+    {name:'DC source',pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="10" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="34" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="24" y1="10" x2="24" y2="22" stroke="#2C2C2A" stroke-width="1.5"/><line x1="19" y1="22" x2="29" y2="22" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'AC source',pins:[{"id": "p0", "name": "L", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "N", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "L", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "N", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="10" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="34" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><path d="M18,16 Q21,8 24,16 Q27,24 30,16" fill="none" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Current src',pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="10" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="34" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="16" x2="28" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="28,16 23,12 23,20" fill="#2C2C2A"/>'},
+    {name:'Battery',pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="14" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="14" y1="8" x2="14" y2="24" stroke="#2C2C2A" stroke-width="3"/><line x1="20" y1="11" x2="20" y2="21" stroke="#2C2C2A" stroke-width="1.5"/><line x1="26" y1="8" x2="26" y2="24" stroke="#2C2C2A" stroke-width="3"/><line x1="32" y1="11" x2="32" y2="21" stroke="#2C2C2A" stroke-width="1.5"/><line x1="32" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+  ],
+  'Transistors':[
+    {name:'NPN BJT',pins:[{"id": "p0", "name": "B", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "C", "rx": 1.0, "ry": 0.1, "type": "power"}, {"id": "p2", "name": "E", "rx": 1.0, "ry": 0.9, "type": "ground"}],pins:[{"id": "p0", "name": "B", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "C", "rx": 1.0, "ry": 0.1, "type": "power"}, {"id": "p2", "name": "E", "rx": 1.0, "ry": 0.9, "type": "ground"}],w:44,h:36,svg:'<line x1="0" y1="18" x2="18" y2="18" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="6" x2="18" y2="30" stroke="#2C2C2A" stroke-width="2.5"/><line x1="18" y1="11" x2="34" y2="4" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="34,4 27,4 29,10" fill="#2C2C2A"/><line x1="34" y1="4" x2="42" y2="0" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="25" x2="34" y2="32" stroke="#2C2C2A" stroke-width="1.5"/><line x1="34" y1="32" x2="42" y2="36" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'PNP BJT',pins:[{"id": "p0", "name": "B", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "C", "rx": 1.0, "ry": 0.1, "type": "power"}, {"id": "p2", "name": "E", "rx": 1.0, "ry": 0.9, "type": "ground"}],pins:[{"id": "p0", "name": "B", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "C", "rx": 1.0, "ry": 0.1, "type": "power"}, {"id": "p2", "name": "E", "rx": 1.0, "ry": 0.9, "type": "ground"}],w:44,h:36,svg:'<line x1="0" y1="18" x2="18" y2="18" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="6" x2="18" y2="30" stroke="#2C2C2A" stroke-width="2.5"/><line x1="18" y1="11" x2="34" y2="4" stroke="#2C2C2A" stroke-width="1.5"/><line x1="42" y1="0" x2="34" y2="4" stroke="#2C2C2A" stroke-width="1.5"/><line x1="18" y1="25" x2="34" y2="32" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="18,25 25,23 23,30" fill="#2C2C2A"/><line x1="34" y1="32" x2="42" y2="36" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'N-MOSFET',pins:[{"id": "p0", "name": "G", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "D", "rx": 1.0, "ry": 0.0, "type": "power"}, {"id": "p2", "name": "S", "rx": 1.0, "ry": 1.0, "type": "ground"}],pins:[{"id": "p0", "name": "G", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "D", "rx": 1.0, "ry": 0.0, "type": "power"}, {"id": "p2", "name": "S", "rx": 1.0, "ry": 1.0, "type": "ground"}],w:42,h:36,svg:'<line x1="0" y1="26" x2="14" y2="26" stroke="#2C2C2A" stroke-width="1.5"/><line x1="14" y1="8" x2="14" y2="28" stroke="#2C2C2A" stroke-width="2"/><line x1="17" y1="8" x2="17" y2="15" stroke="#2C2C2A" stroke-width="2.5"/><line x1="17" y1="18" x2="17" y2="25" stroke="#2C2C2A" stroke-width="2.5"/><line x1="17" y1="12" x2="28" y2="6" stroke="#2C2C2A" stroke-width="1.5"/><line x1="28" y1="6" x2="36" y2="0" stroke="#2C2C2A" stroke-width="1.5"/><line x1="17" y1="22" x2="28" y2="28" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="20,22 26,21 25,28" fill="#2C2C2A"/><line x1="28" y1="28" x2="36" y2="34" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'P-MOSFET',pins:[{"id": "p0", "name": "G", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "D", "rx": 1.0, "ry": 0.0, "type": "power"}, {"id": "p2", "name": "S", "rx": 1.0, "ry": 1.0, "type": "ground"}],pins:[{"id": "p0", "name": "G", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p1", "name": "D", "rx": 1.0, "ry": 0.0, "type": "power"}, {"id": "p2", "name": "S", "rx": 1.0, "ry": 1.0, "type": "ground"}],w:42,h:36,svg:'<line x1="0" y1="26" x2="14" y2="26" stroke="#2C2C2A" stroke-width="1.5"/><line x1="14" y1="8" x2="14" y2="28" stroke="#2C2C2A" stroke-width="2"/><line x1="17" y1="8" x2="17" y2="15" stroke="#2C2C2A" stroke-width="2.5"/><line x1="17" y1="18" x2="17" y2="25" stroke="#2C2C2A" stroke-width="2.5"/><line x1="17" y1="12" x2="28" y2="6" stroke="#2C2C2A" stroke-width="1.5"/><line x1="28" y1="6" x2="36" y2="0" stroke="#2C2C2A" stroke-width="1.5"/><line x1="17" y1="22" x2="28" y2="28" stroke="#2C2C2A" stroke-width="1.5"/><polygon points="17,19 17,25 23,21" fill="#2C2C2A"/><line x1="28" y1="28" x2="36" y2="34" stroke="#2C2C2A" stroke-width="1.5"/>'},
+  ],
+  'Transformers':[
+    {name:'Transformer',pins:[{"id": "p0", "name": "P+", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "P-", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "S+", "rx": 1.0, "ry": 0.25, "type": "power"}, {"id": "p3", "name": "S-", "rx": 1.0, "ry": 0.75, "type": "ground"}],pins:[{"id": "p0", "name": "P+", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "P\u2212", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "S+", "rx": 1.0, "ry": 0.25, "type": "power"}, {"id": "p3", "name": "S\u2212", "rx": 1.0, "ry": 0.75, "type": "ground"}],w:52,h:32,svg:'<line x1="0" y1="8" x2="6" y2="8" stroke="#2C2C2A" stroke-width="1.5"/><path d="M6,8 Q9,2 12,8 Q15,2 18,8 Q21,2 24,8" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="0" y1="24" x2="6" y2="24" stroke="#2C2C2A" stroke-width="1.5"/><path d="M6,24 Q9,18 12,24 Q15,18 18,24 Q21,18 24,24" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="26" y1="4" x2="26" y2="28" stroke="#2C2C2A" stroke-width="0.5" stroke-dasharray="2,2"/><path d="M28,8 Q31,2 34,8 Q37,2 40,8 Q43,2 46,8" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="46" y1="8" x2="52" y2="8" stroke="#2C2C2A" stroke-width="1.5"/><path d="M28,24 Q31,18 34,24 Q37,18 40,24 Q43,18 46,24" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><line x1="46" y1="24" x2="52" y2="24" stroke="#2C2C2A" stroke-width="1.5"/>'},
+  ],
+  'Measurement':[
+    {name:'Ammeter',pins:[{"id": "p0", "name": "IN", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "OUT", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "IN", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "OUT", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="12" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="12" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><text x="24" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A" font-family="system-ui">A</text><line x1="36" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Voltmeter',pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 1.0, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="12" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="12" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><text x="24" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A" font-family="system-ui">V</text><line x1="36" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Wattmeter',pins:[{"id": "p0", "name": "V+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "I+", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "V+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "I+", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="12" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="12" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><text x="24" y="21" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A" font-family="system-ui">W</text><line x1="36" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Ohmmeter',pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "A", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p1", "name": "B", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<line x1="0" y1="16" x2="12" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><circle cx="24" cy="16" r="12" fill="none" stroke="#2C2C2A" stroke-width="1.5"/><text x="24" y="21" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A" font-family="system-ui">Ω</text><line x1="36" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'ACS758',pins:[{"id": "p0", "name": "IP+", "rx": 0.0, "ry": 0.35, "type": "power"}, {"id": "p1", "name": "IP-", "rx": 0.0, "ry": 0.65, "type": "ground"}, {"id": "p2", "name": "VCC", "rx": 1.0, "ry": 0.2, "type": "power"}, {"id": "p3", "name": "GND", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p4", "name": "OUT", "rx": 1.0, "ry": 0.8, "type": "adc"}],pins:[{"id": "p0", "name": "IP+ in", "rx": 0.0, "ry": 0.35, "type": "power"}, {"id": "p1", "name": "IP\u2212 in", "rx": 0.0, "ry": 0.65, "type": "ground"}, {"id": "p2", "name": "VCC 5V", "rx": 1.0, "ry": 0.2, "type": "power"}, {"id": "p3", "name": "GND", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p4", "name": "VOUT ADC", "rx": 1.0, "ry": 0.8, "type": "adc"}],w:48,h:32,svg:'<rect x="6" y="4" width="36" height="24" rx="3" fill="#E1F5EE" stroke="#1D9E75" stroke-width="1.5"/><text x="24" y="14" text-anchor="middle" font-size="7" font-weight="700" fill="#04342C" font-family="system-ui">ACS758</text><text x="24" y="23" text-anchor="middle" font-size="7" fill="#085041" font-family="system-ui">50A Hall</text><line x1="0" y1="12" x2="6" y2="12" stroke="#2C2C2A" stroke-width="1.5"/><line x1="0" y1="20" x2="6" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><line x1="42" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'ZMPT101B',pins:[{"id": "p0", "name": "AC L", "rx": 0.0, "ry": 0.35, "type": "power"}, {"id": "p1", "name": "AC N", "rx": 0.0, "ry": 0.65, "type": "ground"}, {"id": "p2", "name": "VCC", "rx": 1.0, "ry": 0.2, "type": "power"}, {"id": "p3", "name": "GND", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p4", "name": "OUT", "rx": 1.0, "ry": 0.8, "type": "adc"}],pins:[{"id": "p0", "name": "AC IN L", "rx": 0.0, "ry": 0.35, "type": "power"}, {"id": "p1", "name": "AC IN N", "rx": 0.0, "ry": 0.65, "type": "ground"}, {"id": "p2", "name": "VCC 5V", "rx": 1.0, "ry": 0.2, "type": "power"}, {"id": "p3", "name": "GND", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p4", "name": "OUT ADC", "rx": 1.0, "ry": 0.8, "type": "adc"}],w:48,h:32,svg:'<rect x="6" y="4" width="36" height="24" rx="3" fill="#EEEDFE" stroke="#7F77DD" stroke-width="1.5"/><text x="24" y="14" text-anchor="middle" font-size="6" font-weight="700" fill="#26215C" font-family="system-ui">ZMPT101B</text><text x="24" y="23" text-anchor="middle" font-size="7" fill="#534AB7" font-family="system-ui">AC Voltage</text><line x1="0" y1="12" x2="6" y2="12" stroke="#2C2C2A" stroke-width="1.5"/><line x1="0" y1="20" x2="6" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><line x1="42" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+  ],
+  'SSG Lab':[
+    {name:'Mega 2560',pins:[{"id": "p0", "name": "5V", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "TX1\u2192Uno", "rx": 1.0, "ry": 0.2, "type": "uart"}, {"id": "p3", "name": "RX1\u2190Uno", "rx": 1.0, "ry": 0.38, "type": "uart"}, {"id": "p4", "name": "TX2\u2192ESP", "rx": 1.0, "ry": 0.56, "type": "uart"}, {"id": "p5", "name": "RX2\u2190ESP", "rx": 1.0, "ry": 0.75, "type": "uart"}, {"id": "p6", "name": "A0-A7", "rx": 0.5, "ry": 0.0, "type": "adc"}, {"id": "p7", "name": "D22-D30", "rx": 0.5, "ry": 1.0, "type": "signal"}],pins:[{"id": "p0", "name": "5V", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "TX1\u2192Uno", "rx": 1.0, "ry": 0.2, "type": "uart"}, {"id": "p3", "name": "RX1\u2190Uno", "rx": 1.0, "ry": 0.35, "type": "uart"}, {"id": "p4", "name": "TX2\u2192ESP", "rx": 1.0, "ry": 0.55, "type": "uart"}, {"id": "p5", "name": "RX2\u2190ESP", "rx": 1.0, "ry": 0.7, "type": "uart"}, {"id": "p6", "name": "A0-A7", "rx": 0.5, "ry": 0.0, "type": "adc"}, {"id": "p7", "name": "D22-D30", "rx": 0.5, "ry": 1.0, "type": "signal"}],w:52,h:32,svg:'<rect x="2" y="4" width="48" height="24" rx="3" fill="#E1F5EE" stroke="#1D9E75" stroke-width="1.5"/><text x="26" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="#04342C" font-family="system-ui">MEGA 2560</text><text x="26" y="24" text-anchor="middle" font-size="7" fill="#085041" font-family="system-ui">Master/DAQ</text>'},
+    {name:'Uno R3',pins:[{"id": "p0", "name": "5V", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "TX\u2192Mega", "rx": 1.0, "ry": 0.25, "type": "uart"}, {"id": "p3", "name": "RX\u2190Mega", "rx": 1.0, "ry": 0.5, "type": "uart"}, {"id": "p4", "name": "D9 PWM", "rx": 1.0, "ry": 0.75, "type": "pwm"}, {"id": "p5", "name": "A0 BEMF", "rx": 0.5, "ry": 0.0, "type": "adc"}],pins:[{"id": "p0", "name": "5V", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "TX\u2192Mega", "rx": 1.0, "ry": 0.25, "type": "uart"}, {"id": "p3", "name": "RX\u2190Mega", "rx": 1.0, "ry": 0.5, "type": "uart"}, {"id": "p4", "name": "D9 PWM out", "rx": 1.0, "ry": 0.75, "type": "pwm"}, {"id": "p5", "name": "A0 back-EMF", "rx": 0.5, "ry": 0.0, "type": "adc"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><text x="24" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="#042C53" font-family="system-ui">UNO R3</text><text x="24" y="24" text-anchor="middle" font-size="7" fill="#0C447C" font-family="system-ui">Signal/RPM</text>'},
+    {name:'ESP32',pins:[{"id": "p0", "name": "3.3V", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "TX\u2192Mega", "rx": 1.0, "ry": 0.25, "type": "uart"}, {"id": "p3", "name": "RX\u2190Mega", "rx": 1.0, "ry": 0.5, "type": "uart"}, {"id": "p4", "name": "SPI TFT", "rx": 0.5, "ry": 0.0, "type": "data"}, {"id": "p5", "name": "I2C OLED", "rx": 0.5, "ry": 1.0, "type": "i2c"}],pins:[{"id": "p0", "name": "3.3V", "rx": 0.0, "ry": 0.25, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.75, "type": "ground"}, {"id": "p2", "name": "TX\u2192Mega", "rx": 1.0, "ry": 0.25, "type": "uart"}, {"id": "p3", "name": "RX\u2190Mega", "rx": 1.0, "ry": 0.5, "type": "uart"}, {"id": "p4", "name": "SPI TFT", "rx": 0.5, "ry": 0.0, "type": "data"}, {"id": "p5", "name": "I2C OLED", "rx": 0.5, "ry": 1.0, "type": "i2c"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#EEEDFE" stroke="#7F77DD" stroke-width="1.5"/><text x="24" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="#26215C" font-family="system-ui">ESP32</text><text x="24" y="24" text-anchor="middle" font-size="7" fill="#534AB7" font-family="system-ui">HMI/WiFi</text>'},
+    {name:'DROK Buck',pins:[{"id": "p0", "name": "IN+ 48V", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "IN-", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p3", "name": "OUT-", "rx": 1.0, "ry": 0.7, "type": "ground"}],pins:[{"id": "p0", "name": "IN+ 48V", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "IN\u2212", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p3", "name": "OUT\u2212", "rx": 1.0, "ry": 0.7, "type": "ground"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#E6F1FB" stroke="#378ADD" stroke-width="1.5"/><text x="24" y="19" text-anchor="middle" font-size="9" font-weight="700" fill="#042C53" font-family="system-ui">DROK</text><line x1="0" y1="16" x2="2" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="46" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'PWM Ctrl',pins:[{"id": "p0", "name": "PWR IN+", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "PWR IN-", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "Motor+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p3", "name": "Motor-", "rx": 1.0, "ry": 0.7, "type": "ground"}, {"id": "p4", "name": "Enable", "rx": 0.5, "ry": 0.0, "type": "signal"}],pins:[{"id": "p0", "name": "PWR IN+", "rx": 0.0, "ry": 0.3, "type": "power"}, {"id": "p1", "name": "PWR IN\u2212", "rx": 0.0, "ry": 0.7, "type": "ground"}, {"id": "p2", "name": "Motor OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p3", "name": "Motor OUT\u2212", "rx": 1.0, "ry": 0.7, "type": "ground"}, {"id": "p4", "name": "Enable", "rx": 0.5, "ry": 0.0, "type": "signal"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#FAEEDA" stroke="#EF9F27" stroke-width="1.5"/><text x="24" y="19" text-anchor="middle" font-size="9" font-weight="700" fill="#412402" font-family="system-ui">PWM Ctrl</text><line x1="0" y1="16" x2="2" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="46" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'8ch Relay',pins:[{"id": "p0", "name": "VCC", "rx": 0.0, "ry": 0.1, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.9, "type": "ground"}, {"id": "p2", "name": "IN1 D22", "rx": 0.0, "ry": 0.28, "type": "signal"}, {"id": "p3", "name": "IN2 D23", "rx": 0.0, "ry": 0.42, "type": "signal"}, {"id": "p4", "name": "IN3 D24", "rx": 0.0, "ry": 0.56, "type": "signal"}, {"id": "p5", "name": "IN4 D25", "rx": 0.0, "ry": 0.7, "type": "signal"}, {"id": "p6", "name": "R1 COM", "rx": 1.0, "ry": 0.2, "type": "com"}, {"id": "p7", "name": "R1 NC", "rx": 1.0, "ry": 0.38, "type": "nc"}, {"id": "p8", "name": "R1 NO", "rx": 1.0, "ry": 0.56, "type": "no"}, {"id": "p9", "name": "R2 COM", "rx": 1.0, "ry": 0.72, "type": "com"}, {"id": "p10", "name": "R2 NO", "rx": 1.0, "ry": 0.88, "type": "no"}],pins:[{"id": "p0", "name": "VCC", "rx": 0.0, "ry": 0.15, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.85, "type": "ground"}, {"id": "p2", "name": "IN1-D22", "rx": 0.0, "ry": 0.3, "type": "signal"}, {"id": "p3", "name": "IN2-D23", "rx": 0.0, "ry": 0.45, "type": "signal"}, {"id": "p4", "name": "IN3-D24", "rx": 0.0, "ry": 0.6, "type": "signal"}, {"id": "p5", "name": "IN4-D25", "rx": 0.0, "ry": 0.75, "type": "signal"}, {"id": "p6", "name": "R1 COM", "rx": 1.0, "ry": 0.2, "type": "com"}, {"id": "p7", "name": "R1 NC", "rx": 1.0, "ry": 0.35, "type": "nc"}, {"id": "p8", "name": "R1 NO", "rx": 1.0, "ry": 0.5, "type": "no"}, {"id": "p9", "name": "R2 COM", "rx": 1.0, "ry": 0.65, "type": "com"}, {"id": "p10", "name": "R2 NC", "rx": 1.0, "ry": 0.8, "type": "nc"}],w:48,h:32,svg:'<rect x="2" y="2" width="44" height="28" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1.5"/><text x="24" y="13" text-anchor="middle" font-size="8" font-weight="700" fill="#4A1B0C" font-family="system-ui">8-CH RELAY</text><rect x="7" y="15" width="6" height="5" rx="1" fill="none" stroke="#D85A30" stroke-width="0.8"/><rect x="16" y="15" width="6" height="5" rx="1" fill="none" stroke="#D85A30" stroke-width="0.8"/><rect x="25" y="15" width="6" height="5" rx="1" fill="none" stroke="#D85A30" stroke-width="0.8"/><rect x="34" y="15" width="6" height="5" rx="1" fill="none" stroke="#D85A30" stroke-width="0.8"/>'},
+    {name:'BASH Amp',pins:[{"id": "p0", "name": "120VAC", "rx": 0.0, "ry": 0.2, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.8, "type": "ground"}, {"id": "p2", "name": "RCA in", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p3", "name": "Wake", "rx": 0.5, "ry": 0.0, "type": "signal"}, {"id": "p4", "name": "OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p5", "name": "OUT-", "rx": 1.0, "ry": 0.7, "type": "ground"}],pins:[{"id": "p0", "name": "120VAC IN", "rx": 0.0, "ry": 0.2, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.8, "type": "ground"}, {"id": "p2", "name": "RCA signal in", "rx": 0.0, "ry": 0.5, "type": "signal"}, {"id": "p3", "name": "Wake pin", "rx": 0.5, "ry": 0.0, "type": "signal"}, {"id": "p4", "name": "OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p5", "name": "OUT\u2212", "rx": 1.0, "ry": 0.7, "type": "ground"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#FAEEDA" stroke="#EF9F27" stroke-width="1.5"/><text x="24" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="#412402" font-family="system-ui">BASH AMP</text><text x="24" y="24" text-anchor="middle" font-size="7" fill="#633806" font-family="system-ui">3-board</text><line x1="0" y1="10" x2="2" y2="10" stroke="#2C2C2A" stroke-width="1.5"/><line x1="46" y1="22" x2="48" y2="22" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'48V PSU',pins:[{"id": "p0", "name": "AC IN", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "48V+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p2", "name": "GND", "rx": 1.0, "ry": 0.7, "type": "ground"}],pins:[{"id": "p0", "name": "120VAC IN", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "48V OUT+", "rx": 1.0, "ry": 0.3, "type": "power"}, {"id": "p2", "name": "GND OUT", "rx": 1.0, "ry": 0.7, "type": "ground"}],w:48,h:32,svg:'<rect x="2" y="4" width="44" height="24" rx="3" fill="#EAF3DE" stroke="#3B6D11" stroke-width="1.5"/><text x="24" y="15" text-anchor="middle" font-size="8" font-weight="700" fill="#173404" font-family="system-ui">48V PSU</text><text x="24" y="24" text-anchor="middle" font-size="7" fill="#3B6D11" font-family="system-ui">25A 1200W</text><line x1="46" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Motor M',pins:[{"id": "p0", "name": "PWR+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "PWR-", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p2", "name": "Shaft", "rx": 0.5, "ry": 1.0, "type": "signal"}],pins:[{"id": "p0", "name": "PWR IN+", "rx": 0.0, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "PWR IN\u2212", "rx": 1.0, "ry": 0.5, "type": "ground"}, {"id": "p2", "name": "Shaft out", "rx": 0.5, "ry": 1.0, "type": "signal"}],w:40,h:40,svg:'<circle cx="20" cy="20" r="18" fill="#F5C4B3" stroke="#D85A30" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#4A1B0C" font-family="system-ui">M</text><line x1="0" y1="20" x2="2" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><line x1="38" y1="20" x2="40" y2="20" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Generator G',pins:[{"id": "p0", "name": "Shaft", "rx": 0.5, "ry": 0.0, "type": "signal"}, {"id": "p1", "name": "AC L", "rx": 1.0, "ry": 0.35, "type": "power"}, {"id": "p2", "name": "AC N", "rx": 1.0, "ry": 0.65, "type": "ground"}],pins:[{"id": "p0", "name": "Shaft in", "rx": 0.5, "ry": 0.0, "type": "signal"}, {"id": "p1", "name": "AC OUT L", "rx": 1.0, "ry": 0.35, "type": "power"}, {"id": "p2", "name": "AC OUT N", "rx": 1.0, "ry": 0.65, "type": "ground"}],w:40,h:40,svg:'<circle cx="20" cy="20" r="18" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#042C53" font-family="system-ui">G</text><line x1="0" y1="20" x2="2" y2="20" stroke="#2C2C2A" stroke-width="1.5"/><line x1="38" y1="20" x2="40" y2="20" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Hall RPM',pins:[{"id": "p0", "name": "VCC", "rx": 0.0, "ry": 0.2, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.8, "type": "ground"}, {"id": "p2", "name": "OUT", "rx": 1.0, "ry": 0.5, "type": "signal"}],pins:[{"id": "p0", "name": "VCC 5V", "rx": 0.0, "ry": 0.2, "type": "power"}, {"id": "p1", "name": "GND", "rx": 0.0, "ry": 0.8, "type": "ground"}, {"id": "p2", "name": "Signal out", "rx": 1.0, "ry": 0.5, "type": "signal"}],w:48,h:32,svg:'<rect x="6" y="4" width="36" height="24" rx="3" fill="#FBEAF0" stroke="#D4537E" stroke-width="1.5"/><text x="24" y="15" text-anchor="middle" font-size="7" font-weight="700" fill="#4B1528" font-family="system-ui">A3144</text><text x="24" y="24" text-anchor="middle" font-size="7" fill="#72243E" font-family="system-ui">Hall RPM</text><line x1="0" y1="16" x2="6" y2="16" stroke="#2C2C2A" stroke-width="1.5"/><line x1="42" y1="16" x2="48" y2="16" stroke="#2C2C2A" stroke-width="1.5"/>'},
+    {name:'Banana Port',pins:[{"id": "p0", "name": "+", "rx": 0.25, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "-", "rx": 0.75, "ry": 0.5, "type": "ground"}],pins:[{"id": "p0", "name": "+", "rx": 0.25, "ry": 0.5, "type": "power"}, {"id": "p1", "name": "\u2212", "rx": 0.75, "ry": 0.5, "type": "ground"}],w:32,h:24,svg:'<circle cx="8" cy="12" r="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/><circle cx="24" cy="12" r="7" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/><text x="8" y="16" text-anchor="middle" font-size="7" fill="#412402" font-family="system-ui">+</text><text x="24" y="16" text-anchor="middle" font-size="7" fill="#412402" font-family="system-ui">−</text>'},
+  ],
+};
+
+function toggleSymPanel(){
+  const p=document.getElementById('sympanel');
+  const isOpen=p.classList.contains('open');
+  p.classList.toggle('open');
+  document.getElementById('symbtn').classList.toggle('on',!isOpen);
+  if(!isOpen) buildSymPanel();
+}
+function buildSymPanel(){
+  symCategories=Object.assign({},BUILTIN);
+  buildSymTabs();showSymCat(symCategory);
+}
+let _symList=[];
+function buildSymTabs(){
+  const _st=document.getElementById('symtabs');_st.innerHTML='';Object.keys(symCategories).forEach(k=>{const _d=document.createElement('div');_d.className='symtab'+(k===symCategory?' on':'');_d.textContent=k;_d.onclick=()=>showSymCat(k);_st.appendChild(_d);});
+}
+function showSymCat(cat){
+  symCategory=cat;buildSymTabs();
+  _symList=symCategories[cat]||[];
+  const el=document.getElementById('symgrid');
+  el.innerHTML='';
+  _symList.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='symcell';d.title=s.name;
+    d.onclick=()=>pickSymIdx(i);
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 '+s.w+' '+s.h);
+    svg.setAttribute('width',(s.w>48?52:48));
+    svg.setAttribute('height',(s.h>32?36:32));
+    svg.innerHTML=s.svg;
+    const sp=document.createElement('span');sp.textContent=s.name;
+    d.appendChild(svg);d.appendChild(sp);
+    el.appendChild(d);
+  });
+}
+function pickSymIdx(i){
+  stampSym=_symList[i];
+  tool='stamp';
+  wrap.style.cursor='copy';
+  showMsg('Click canvas to place: '+stampSym.name+' (Shift=multi)');
+}
+function loadSVGLib(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const fr=new FileReader();
+  fr.onload=e=>{
+    try{
+      const parser=new DOMParser();
+      const doc=parser.parseFromString(e.target.result,'image/svg+xml');
+      const syms=doc.querySelectorAll('symbol');
+      if(!syms.length){showMsg('No symbols found');return;}
+      const cats={};
+      syms.forEach(sym=>{
+        const id=sym.getAttribute('id')||'sym';
+        const title=sym.querySelector('title');
+        const name=title?title.textContent:id;
+        const vb=(sym.getAttribute('viewBox')||'0 0 48 32').split(' ').map(Number);
+        const cat=id.split('_')[0]||'Imported';
+        if(!cats[cat])cats[cat]=[];
+        cats[cat].push({name,svg:sym.innerHTML,w:vb[2]||48,h:vb[3]||32});
+      });
+      Object.assign(symCategories,cats);
+      buildSymTabs();
+      showMsg('Loaded '+syms.length+' symbols from '+f.name);
+    }catch(err){showMsg('Parse error: '+err.message);}
+  };
+  fr.readAsText(f);ev.target.value='';
+}
+
+// BLUEPRINT
+function loadBlueprint(){
+  if(shapes.length&&!confirm('Load SSG blueprint? Current drawing will be replaced.'))return;
+  const txt=(x,y,t,c,fs)=>({id:sid(),type:'text',x,y,text:t,color:c||'#2C2C2A',strokeW:1,fontSize:fs||11});
+  const box=(x,y,w,h,c,f)=>({id:sid(),type:'rrect',x,y,w,h,color:c||'#2C2C2A',strokeW:2,fill:f||null});
+  const arr=(x,y,x2,y2,c,sw2)=>({id:sid(),type:'arrow',x,y,x2,y2,color:c||'#2C2C2A',strokeW:sw2||2});
+  const lin=(x,y,x2,y2,c,sw2)=>({id:sid(),type:'line',x,y,x2,y2,color:c||'#888780',strokeW:sw2||1});
+  const lbl=(x,y,w,h,t,c,f,fs)=>({id:sid(),type:'label',x,y,w,h,text:t,color:c||'#2C2C2A',strokeW:1.5,fill:f||'#E1F5EE',fontSize:fs||11});
+
+  shapes=[
+    txt(20,8,'SSG Lab Station — Power Routing Blueprint','#2C2C2A',15),
+    txt(20,28,'Grid Mode: NC contacts active · Loop Mode: NO contacts active · Mega controls all relays','#888780',9),
+    // 48V PSU
+    box(20,70,110,58,'#3B6D11','#EAF3DE'),
+    txt(30,82,'48V PSU','#173404',13),txt(30,98,'25A · 1200W','#3B6D11',10),txt(30,111,'main source','#3B6D11',9),
+    // 8-CH RELAY
+    box(190,38,162,370,'#888780','#F1EFE8'),
+    txt(210,52,'8-Channel Relay Board','#2C2C2A',12),txt(210,66,'Mega D22–D30 controls','#888780',9),
+    lbl(200,85,142,44,'Relay 1 — MASTER','#D85A30','#FAECE7',10),
+    txt(204,104,'NC: PSU→DROK  NO: Gen→DROK','#888780',8),
+    lbl(200,138,142,40,'Relay 2 — PWM','#D85A30','#FAECE7',10),
+    txt(204,155,'NC: PSU→PWM ctrl  NO: standby','#888780',8),
+    lbl(200,188,142,40,'Relay 3 — Feedback','#185FA5','#E6F1FB',10),
+    txt(204,205,'NC: idle  NO: Gen output→DROK','#888780',8),
+    lbl(200,238,142,38,'Relay 4 — Load/BASH','#888780','#F1EFE8',10),
+    lbl(200,286,142,34,'Relay 5 — Fan','#888780','#F1EFE8',10),
+    lbl(200,330,142,34,'Relays 6–8 — Expansion','#888780','#F1EFE8',10),
+    box(200,378,162,36,'#E24B4A','#FCEBEB'),
+    txt(208,388,'1-ch Relay — MASTER KILL','#A32D2D',10),txt(208,401,'cuts ALL grid instantly','#A32D2D',9),
+    // DROK
+    box(415,68,118,54,'#185FA5','#E6F1FB'),
+    txt(424,80,'DROK Buck','#042C53',13),txt(424,96,'48V → target V','#185FA5',10),txt(424,108,'own screen + encoder','#185FA5',9),
+    // PWM CTRL
+    box(415,146,118,50,'#BA7517','#FAEEDA'),
+    txt(424,158,'PWM Controller','#412402',13),txt(424,174,'12–60V speed ctrl','#633806',10),txt(424,186,'Mega D34 enable','#633806',9),
+    // MOTOR
+    box(595,58,110,72,'#D85A30','#F5C4B3'),
+    txt(628,80,'MOTOR','#4A1B0C',16),txt(618,102,'prime mover','#712B13',10),txt(610,115,'rated V +20% head','#712B13',9),
+    // SHAFT (dashed line)
+    lin(650,130,650,218,'#2C2C2A',3),
+    txt(658,170,'⚙ shaft','#5F5E5A',9),
+    // GENERATOR
+    box(595,220,110,66,'#185FA5','#E6F1FB'),
+    txt(620,245,'GENERATOR','#042C53',15),txt(608,262,'raw output','#185FA5',10),txt(605,275,'banana ports IN','#185FA5',9),
+    // RPM
+    box(720,120,100,40,'#D4537E','#FBEAF0'),
+    txt(728,132,'RPM Sensors','#4B1528',10),txt(728,145,'A3144 + LM393','#72243E',9),
+    // BANANA PORTS
+    box(415,330,118,50,'#888780','#F1EFE8'),
+    txt(424,342,'Banana Ports','#2C2C2A',12),txt(424,358,'2× top: gen input','#444441',9),txt(424,371,'2× bot: feedback out','#444441',9),
+    // SCHOTTKY DIODES
+    lbl(350,80,42,20,'Schottky','#A32D2D','#FCEBEB',9),
+    lbl(350,260,42,20,'Schottky','#A32D2D','#FCEBEB',9),
+    // ARROWS
+    arr(130,99,190,107,'#3B6D11'),txt(140,88,'48V DC','#3B6D11',9),
+    arr(362,107,415,95,'#3B6D11'),txt(368,95,'NC path','#3B6D11',9),
+    arr(362,171,415,171,'#3B6D11'),txt(368,160,'NC path','#3B6D11',9),
+    arr(533,95,595,90,'#3B6D11'),txt(540,84,'regulated V','#3B6D11',9),
+    arr(533,171,595,125,'#3B6D11'),
+    arr(595,258,533,350,'#185FA5'),txt(540,310,'raw gen output','#185FA5',9),
+    arr(415,350,362,228,'#185FA5'),txt(370,295,'NO feedback','#185FA5',9),
+    arr(362,218,415,115,'#185FA5'),
+    // MEASUREMENT LEGEND
+    box(20,460,280,72,'#04342C','#E1F5EE'),
+    txt(28,472,'Energy Audit Equations','#04342C',12),
+    txt(28,488,'Pin = ACS758#1 × ZMPT grid V (watts in)','#085041',9),
+    txt(28,501,'Pout = ACS758#2 × ZMPT gen V (watts out)','#085041',9),
+    txt(28,514,'Feedback = ACS758#3 × DROK out V','#085041',9),
+    txt(28,527,'η = Pout ÷ Pin  ·  Deficit = Pin − Pout','#3B6D11',10),
+    // MODE LEGEND
+    box(320,460,260,72,'#1D9E75','#E1F5EE'),
+    txt(330,472,'Operating Modes','#04342C',12),
+    txt(330,488,'GRID MODE (NC): wall→relay→motor','#3B6D11',10),
+    txt(330,501,'LOOP MODE (NO): gen→DROK→motor','#185FA5',10),
+    txt(330,514,'BASH MODE: Uno D9→pre-amp→amp→load','#BA7517',10),
+    txt(330,527,'KILL: 1-ch relay severs all grid power','#A32D2D',10),
+  ];
+  sel=null;undos=[];redos=[];
+  document.getElementById('dwgname').value='SSG Power Blueprint';
+  fitView(); showMsg('Blueprint loaded');
+}
+
+
+// ── LIVE SYNC ──
+let syncWS = null;
+let syncConnected = false;
+let syncAuto = true;
+let syncURL = '';
+let syncLogLines = [];
+
+function toggleSync(){
+  const p = document.getElementById('syncpanel');
+  p.classList.toggle('open');
+  document.getElementById('synctoggle').classList.toggle('live', p.classList.contains('open'));
+}
+
+function syncLog(msg){
+  const now = new Date().toLocaleTimeString();
+  syncLogLines.unshift('['+now+'] '+msg);
+  if(syncLogLines.length>12) syncLogLines.pop();
+  document.getElementById('synclog').textContent = syncLogLines.join('\n');
+}
+
+function syncSetStatus(state){
+  const dot = document.getElementById('syncdot');
+  const st = document.getElementById('syncstatus');
+  const tog = document.getElementById('synctoggle');
+  const connBtn = document.getElementById('syncconnbtn');
+  const sendBtn = document.getElementById('syncsendbtn');
+  const discBtn = document.getElementById('syncdiscbtn');
+  if(state==='connected'){
+    dot.className='conn'; st.textContent='Live — connected';
+    tog.textContent='🟢 Live Sync'; tog.style.background='#1D9E75'; tog.style.color='#fff';
+    connBtn.style.display='none'; sendBtn.style.display='block'; discBtn.style.display='block';
+    syncConnected=true;
+  } else if(state==='error'){
+    dot.className='err'; st.textContent='Connection error';
+    tog.textContent='🔴 Live Sync'; tog.style.background=''; tog.style.color='';
+    connBtn.style.display='block'; sendBtn.style.display='none'; discBtn.style.display='none';
+    syncConnected=false;
+  } else {
+    dot.className=''; st.textContent='Not connected';
+    tog.textContent='🔴 Live Sync'; tog.style.background=''; tog.style.color='';
+    connBtn.style.display='block'; sendBtn.style.display='none'; discBtn.style.display='none';
+    syncConnected=false;
+  }
+}
+
+function syncConnect(){
+  let url = document.getElementById('syncurl').value.trim();
+  if(!url){ syncLog('Enter server URL first'); return; }
+  // Convert http → ws
+  syncURL = url;
+  const wsURL = url.replace(/^https?/,'wss').replace(/^http:/,'ws:');
+  syncLog('Connecting to '+wsURL+'...');
+  try {
+    if(syncWS){ syncWS.close(); }
+    syncWS = new WebSocket(wsURL);
+    syncWS.onopen = () => {
+      syncSetStatus('connected');
+      syncLog('Connected ✓ Claude can now read your drawing');
+      syncPush();
+    };
+    syncWS.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if(msg.type==='state'&&msg.payload){
+          // Incoming state from another client — merge if not own push
+          if(msg.payload._source!=='local'){
+            syncLog('← Received update from server');
+            // Could apply here, but for now just log
+          }
+        }
+      } catch(err){}
+    };
+    syncWS.onerror = () => { syncSetStatus('error'); syncLog('WebSocket error'); };
+    syncWS.onclose = () => {
+      if(syncConnected){ syncLog('Connection closed'); syncSetStatus('disconnected'); }
+    };
+  } catch(err){
+    syncSetStatus('error'); syncLog('Error: '+err.message);
+  }
+}
+
+function syncDisconnect(){
+  if(syncWS){ syncWS.close(); syncWS=null; }
+  syncSetStatus('disconnected');
+  syncLog('Disconnected');
+}
+
+function syncGetPayload(){
+  const ser = shapes.map(s=>{const{imgEl,_img,...r}=s;return r;});
+  return {
+    shapes: ser,
+    wires: JSON.parse(JSON.stringify(wires)),
+    dwgName: document.getElementById('dwgname').value,
+    ts: new Date().toISOString(),
+    _source: 'local'
+  };
+}
+
+function syncPush(){
+  const payload = syncGetPayload();
+  // Try WebSocket first
+  if(syncWS && syncWS.readyState===1){
+    syncWS.send(JSON.stringify({type:'state', payload}));
+    syncLog('⬆ Pushed '+shapes.length+' shapes, '+wires.length+' wires');
+    return;
+  }
+  // Fallback: REST POST
+  if(syncURL){
+    fetch(syncURL+'/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(d=>syncLog('⬆ REST push OK ('+d.clients+' clients)'))
+      .catch(e=>syncLog('REST push failed: '+e.message));
+  }
+}
+
+// Hook into render to auto-sync
+const _origRenderForSync = render;
+let _syncThrottle = null;
+function render(){
+  _origRenderForSync();
+  if(syncConnected && document.getElementById('syncauto').checked){
+    clearTimeout(_syncThrottle);
+    _syncThrottle = setTimeout(syncPush, 800);
+  }
+}
+
+async function init(){
+  buildPalette();resizeCvs();await loadGallery();
+  window.addEventListener('resize',resizeCvs);
+  render();
+}
+init();
+</script></body></html>
