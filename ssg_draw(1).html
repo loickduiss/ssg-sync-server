@@ -1202,12 +1202,12 @@ function loadBlueprint(){
 }
 
 
-// ── LIVE SYNC ──
-let syncWS = null;
+// ── LIVE SYNC (HTTP polling + REST POST — works through every proxy) ──
 let syncConnected = false;
-let syncAuto = true;
 let syncURL = '';
 let syncLogLines = [];
+let _syncThrottle = null;
+let _pollInterval = null;
 
 function toggleSync(){
   const p = document.getElementById('syncpanel');
@@ -1218,25 +1218,26 @@ function toggleSync(){
 function syncLog(msg){
   const now = new Date().toLocaleTimeString();
   syncLogLines.unshift('['+now+'] '+msg);
-  if(syncLogLines.length>12) syncLogLines.pop();
-  document.getElementById('synclog').textContent = syncLogLines.join('\n');
+  if(syncLogLines.length>14) syncLogLines.pop();
+  const el = document.getElementById('synclog');
+  if(el) el.textContent = syncLogLines.join('\n');
 }
 
-function syncSetStatus(state){
+function syncSetStatus(s){
   const dot = document.getElementById('syncdot');
-  const st = document.getElementById('syncstatus');
+  const st  = document.getElementById('syncstatus');
   const tog = document.getElementById('synctoggle');
   const connBtn = document.getElementById('syncconnbtn');
   const sendBtn = document.getElementById('syncsendbtn');
   const discBtn = document.getElementById('syncdiscbtn');
-  if(state==='connected'){
+  if(s==='connected'){
     dot.className='conn'; st.textContent='Live — connected';
     tog.textContent='🟢 Live Sync'; tog.style.background='#1D9E75'; tog.style.color='#fff';
     connBtn.style.display='none'; sendBtn.style.display='block'; discBtn.style.display='block';
     syncConnected=true;
-  } else if(state==='error'){
-    dot.className='err'; st.textContent='Connection error';
-    tog.textContent='🔴 Live Sync'; tog.style.background=''; tog.style.color='';
+  } else if(s==='error'){
+    dot.className='err'; st.textContent='Error — check URL';
+    tog.textContent='🔴 Live Sync'; tog.style.background='#E24B4A'; tog.style.color='#fff';
     connBtn.style.display='block'; sendBtn.style.display='none'; discBtn.style.display='none';
     syncConnected=false;
   } else {
@@ -1248,44 +1249,43 @@ function syncSetStatus(state){
 }
 
 function syncConnect(){
-  let url = document.getElementById('syncurl').value.trim();
-  if(!url){ syncLog('Enter server URL first'); return; }
-  // Convert http → ws
+  let url = document.getElementById('syncurl').value.trim().replace(/\/+$/, '');
+  if(!url){ syncLog('Paste server URL first'); return; }
   syncURL = url;
-  const wsURL = url.replace(/^https?/,'wss').replace(/^http:/,'ws:');
-  syncLog('Connecting to '+wsURL+'...');
-  try {
-    if(syncWS){ syncWS.close(); }
-    syncWS = new WebSocket(wsURL);
-    syncWS.onopen = () => {
+  syncLog('Testing ' + url + ' ...');
+
+  // Simple GET /state to verify server is reachable
+  fetch(url + '/state')
+    .then(r => {
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(d => {
       syncSetStatus('connected');
-      syncLog('Connected ✓ Claude can now read your drawing');
-      syncPush();
-    };
-    syncWS.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.type==='state'&&msg.payload){
-          // Incoming state from another client — merge if not own push
-          if(msg.payload._source!=='local'){
-            syncLog('← Received update from server');
-            // Could apply here, but for now just log
-          }
-        }
-      } catch(err){}
-    };
-    syncWS.onerror = () => { syncSetStatus('error'); syncLog('WebSocket error'); };
-    syncWS.onclose = () => {
-      if(syncConnected){ syncLog('Connection closed'); syncSetStatus('disconnected'); }
-    };
-  } catch(err){
-    syncSetStatus('error'); syncLog('Error: '+err.message);
-  }
+      syncLog('✓ Connected — server OK (' + (d.clients||0) + ' clients)');
+      syncLog('Claude can now read your drawing at any time');
+      syncPush(); // push current state immediately
+      // Poll every 3s to keep connection alive indicator fresh
+      clearInterval(_pollInterval);
+      _pollInterval = setInterval(()=>{
+        fetch(url+'/state').then(r=>r.json()).then(d=>{
+          document.getElementById('syncstatus').textContent='Live · '+d.state.shapes?.length+' shapes';
+        }).catch(()=>{syncSetStatus('error');syncLog('Lost connection');clearInterval(_pollInterval);});
+      }, 3000);
+    })
+    .catch(e => {
+      syncSetStatus('error');
+      syncLog('Cannot reach server: ' + e.message);
+      syncLog('Make sure URL has no trailing slash');
+      syncLog('Example: https://ssg-sync-server-production.up.railway.app');
+    });
 }
 
 function syncDisconnect(){
-  if(syncWS){ syncWS.close(); syncWS=null; }
+  clearInterval(_pollInterval); _pollInterval=null;
   syncSetStatus('disconnected');
+  syncConnected = false;
+  syncURL = '';
   syncLog('Disconnected');
 }
 
@@ -1301,31 +1301,22 @@ function syncGetPayload(){
 }
 
 function syncPush(){
+  if(!syncURL || !syncConnected){ syncLog('Not connected'); return; }
   const payload = syncGetPayload();
-  // Try WebSocket first
-  if(syncWS && syncWS.readyState===1){
-    syncWS.send(JSON.stringify({type:'state', payload}));
-    syncLog('⬆ Pushed '+shapes.length+' shapes, '+wires.length+' wires');
-    return;
-  }
-  // Fallback: REST POST
-  if(syncURL){
-    fetch(syncURL+'/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-      .then(r=>r.json()).then(d=>syncLog('⬆ REST push OK ('+d.clients+' clients)'))
-      .catch(e=>syncLog('REST push failed: '+e.message));
-  }
+  fetch(syncURL + '/state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => {
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(d => syncLog('⬆ Synced · ' + payload.shapes.length + ' shapes · ' + payload.wires.length + ' wires'))
+  .catch(e => { syncLog('Sync error: ' + e.message); });
 }
 
-// Hook into render to auto-sync
-const _origRenderForSync = render;
-let _syncThrottle = null;
-function render(){
-  _origRenderForSync();
-  if(syncConnected && document.getElementById('syncauto').checked){
-    clearTimeout(_syncThrottle);
-    _syncThrottle = setTimeout(syncPush, 800);
-  }
-}
+// Auto-sync is triggered from saveU() — no render override needed
 
 async function init(){
   buildPalette();resizeCvs();await loadGallery();
